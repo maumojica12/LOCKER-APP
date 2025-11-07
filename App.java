@@ -94,7 +94,150 @@ public class App {
                     System.out.println("Invalid Input. Try again.");
             }
         }while(choice != 0);
-    }   
+    }  
+
+
+    
+    public static void LocationManagementMenu(){
+        int choice;
+
+        /* (lockerID, lockerLocation, lockerTypeID, lockerStatus) */
+        do{
+            System.out.println("\nLocker Location Management");
+            System.out.println("[1] View All Locker Locations");
+            System.out.println("[2] View All Available Lockers in Location");
+            System.out.println("[0] Return to Main Menu");
+            System.out.print("Select an option: ");
+            Scanner sc = new Scanner(System.in);
+            choice = sc.nextInt();
+
+            switch(choice){
+                case 1:
+                    System.out.println("View All Lockers\n");
+                    break;
+                case 2:
+                    System.out.println("View All Available Lockers in Location\n");
+                    break;
+                case 0:
+                    System.out.println("Returning to Main Menu\n");
+                    break;
+                default:
+                    System.out.println("Invalid Input. Try again.");
+            }
+        }while(choice != 0);
+    }
+
+    public static void BookingManagementMenu(){
+        int choice;
+
+        do{
+            System.out.println("\nBooking Management");
+            System.out.println("[1] Make a Reservation");
+            System.out.println("[2] Book and Confirm Reservation");
+            System.out.println("[0] Return to Main Menu");
+            System.out.print("Select an option: ");
+            Scanner sc = new Scanner(System.in);
+            choice = sc.nextInt();
+
+            switch(choice){
+                case 1:
+                    System.out.println("Make a Reservation\n");
+                    break;
+                case 2:
+                    System.out.println("Book and Confirm Reservation\n");
+                    break;
+                case 0:
+                    System.out.println("Returning to Main Menu\n");
+                    break;
+                default:
+                    System.out.println("Invalid Input. Try again.");
+            }
+        }while(choice != 0);
+    }
+
+    public static void CancellationManagementMenu(){
+        int choice;
+
+        do{
+            System.out.println("\nCancellation Management");
+            System.out.println("[1] Cancel a Reservation");
+            System.out.println("[2] View All Cancellations");
+            System.out.println("[0] Return to Main Menu");
+            System.out.print("Select an option: ");
+            Scanner sc = new Scanner(System.in);
+            choice = sc.nextInt();
+
+            switch(choice){
+                case 1:
+                    System.out.println("Cancel a Reservation\n");
+                    break;
+                case 2:
+                    System.out.println("View All Cancellations\n");
+                    break;
+                case 0:
+                    System.out.println("Returning to Main Menu\n");
+                    break;
+                default:
+                    System.out.println("Invalid Input. Try again.");
+            }
+        }while(choice != 0);
+    }
+
+    public static void ManagePayments(){
+        int choice;
+
+        do{
+            System.out.println("\nPayment Management");
+            System.out.println("[1] View All Payments");
+            System.out.println("[2] Search Payment by ID");
+            System.out.println("[0] Return to Main Menu");
+            System.out.print("Select an option: ");
+            Scanner sc = new Scanner(System.in);
+            choice = sc.nextInt();
+
+            switch(choice){
+                case 1:
+                    System.out.println("View All Payments\n");
+                    break;
+                case 2:
+                    System.out.println("Search Payment by ID\n");
+                    break;
+                case 0:
+                    System.out.println("Returning to Main Menu\n");
+                    break;
+                default:
+                    System.out.println("Invalid Input. Try again.");
+            }
+        }while(choice != 0);
+    }
+
+    public static void LockerTransferManagementMenu(){
+        int choice;
+
+        do{
+            System.out.println("\nLocker Transfer Management");
+            System.out.println("[1] View All Transfers");
+            System.out.println("[2] Search Transfer by ID");
+            System.out.println("[0] Return to Main Menu");
+            System.out.print("Select an option: ");
+            Scanner sc = new Scanner(System.in);
+            choice = sc.nextInt();
+
+            switch(choice){
+                case 1:
+                    System.out.println("View All Transfers\n");
+                    break;
+                case 2:
+                    System.out.println("Search Transfer by ID\n");
+                    break;
+                case 0:
+                    System.out.println("Returning to Main Menu\n");
+                    break;
+                default:
+                    System.out.println("Invalid Input. Try again.");
+            }
+        }while(choice != 0);
+    }
 
     public static void main(String[] args) throws Exception {
         Scanner sc = new Scanner(System.in);
@@ -130,19 +273,19 @@ public class App {
                     break;
 
                 case 4:
-                    System.out.println("Locker Location Management\n");
+                    LocationManagementMenu();
                     break;
                 case 5:
-                    System.out.println("Booking/Reservation Management\n");
+                    BookingManagementMenu();
                     break;
                 case 6:
-                    System.out.println("Cancellation Management\n");
+                    CancellationManagementMenu();
                     break;
                 case 7:
-                    System.out.println("Payment Management\n");
+                    ManagePayments();
                     break;
                 case 8:
-                    System.out.println("Locker Transfer Management\n");
+                    LockerTransferManagementMenu();
                     break;
           
                 case 0:
