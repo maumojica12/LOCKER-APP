@@ -1,3 +1,4 @@
+import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -8,6 +9,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 public class AppFX extends Application {
 
@@ -22,6 +24,7 @@ public class AppFX extends Application {
     private static final double BUTTON_WIDTH = 300; // Increased width slightly
     private static final double BUTTON_HEIGHT = 50; // New: Added height
 
+    //Main Menu
     @Override
     public void start(Stage primaryStage) {
         primaryStage.setTitle("Luggage Locker Booking System");
@@ -37,12 +40,12 @@ public class AppFX extends Application {
             "MANAGE PAYMENTS", "MANAGE TRANSFERS", "GENERATE REPORTS", 
             "EXIT"
         };
-        
+ 
         // --- 1. Create Left Menu (VBox) ---
-        VBox leftMenu = createButtonMenu(menuLabels, 0, 5); 
+        VBox leftMenu = mainMenuButton(menuLabels, 0, 5,primaryStage); 
         
         // --- 2. Create Right Menu (VBox) ---
-        VBox rightMenu = createButtonMenu(menuLabels, 5, 10); 
+        VBox rightMenu = mainMenuButton(menuLabels, 5, 10,primaryStage); 
         
         // --- 3. Main Layout (StackPane) ---
         StackPane root = new StackPane();
@@ -65,9 +68,9 @@ public class AppFX extends Application {
     }
     
     /**
-     * Helper method to create a VBox containing a subset of buttons.
+     * FOR MAIN MENU ACTION
      */
-    private static VBox createButtonMenu(String[] labels, int start, int end) {
+    private static VBox mainMenuButton(String[] labels, int start, int end,Stage primaryStage) {
         // Removed 'Pos alignment' argument as it's not strictly necessary for button text alignment 
         // when using CENTER alignment for the text itself.
         
@@ -92,11 +95,172 @@ public class AppFX extends Application {
             // Pos.CENTER ensures the text is centered both horizontally and vertically.
             btn.setAlignment(Pos.CENTER); 
             btn.setStyle("-fx-font-weight: bold;");
-            btn.setOnAction(e -> System.out.println(label + " clicked!")); 
+
+            switch (labels[i]) {
+                case "MANAGE USERS":
+                    btn.setOnAction(e -> handleManageUsers(primaryStage));
+                    break;
+                case "MANAGE LOCKER TYPES":
+                    btn.setOnAction(e -> handleManageLockerTypes());
+                    break;
+                case "MANAGE LOCKERS":
+                    btn.setOnAction(e -> handleManageLockers());
+                    break;
+                case "MANAGE LOCKER LOCATIONS":
+                    btn.setOnAction(e -> handleManageLockerLocations());
+                    break;
+                case "BOOK/MANAGE RESERVATIONS":
+                    btn.setOnAction(e -> handleBooking());
+                    break;
+                case "MANAGE CANCELLATIONS":
+                    btn.setOnAction(e -> handleCancellations());
+                    break;
+                case "MANAGE PAYMENTS":
+                    btn.setOnAction(e -> handlePayments());
+                    break;
+                case "MANAGE TRANSFERS":
+                    btn.setOnAction(e -> handleTransfers());
+                    break;
+                case "GENERATE REPORTS":
+                    btn.setOnAction(e -> handleReports());
+                    break;
+                case "EXIT":
+                    btn.setOnAction(e -> handleExit(primaryStage));
+                    break;
+            }
             
             menu.getChildren().add(btn);
         }
         return menu;
+    }
+
+   // Updated handleManageUsers function:
+private static void handleManageUsers(Stage stage) {
+    stage.setTitle("Luggage Locker Booking System - User Management");
+    Image userMenuBG = new Image(AppFX.class.getResourceAsStream("userMenu.jpg"));
+    ImageView backgroundView = new ImageView(userMenuBG);
+    
+    String[] menuLabels = {
+        "ADD USER", "VIEW ALL USERS", "SEARCH USER BY ID/NAME", 
+        "UPDATE USER", "DELETE USER", "RETURN TO MAIN MENU"
+    };
+    VBox leftMenu = userMenuButton(menuLabels, 0, 3, stage); //left menu
+    VBox rightMenu = userMenuButton(menuLabels, 3, 6, stage);  // right menu
+    StackPane root = new StackPane();
+    root.getChildren().addAll(backgroundView, leftMenu, rightMenu);
+    StackPane.setAlignment(leftMenu, Pos.CENTER_LEFT);
+    StackPane.setAlignment(rightMenu, Pos.CENTER_RIGHT);
+    Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT); 
+
+    backgroundView.fitWidthProperty().bind(scene.widthProperty());
+    backgroundView.fitHeightProperty().bind(scene.heightProperty());
+    backgroundView.setPreserveRatio(false);
+    stage.setScene(scene);
+    stage.show();
+}
+
+//FOR USER MENU ACTION
+private static VBox userMenuButton(String[] labels, int start, int end, Stage stage) {
+    VBox menu = new VBox(25); 
+    menu.setPadding(new Insets(450, 320, 320, 320)); 
+    menu.setMaxWidth(VBox.USE_PREF_SIZE);
+
+    for (int i = start; i < end; i++) {
+        if (i >= labels.length) break; 
+        
+        String label = labels[i];
+        Button btn = new Button(label);
+
+        btn.setMinWidth(BUTTON_WIDTH); 
+        btn.setMinHeight(BUTTON_HEIGHT); 
+        btn.setMaxWidth(BUTTON_WIDTH); 
+        btn.setAlignment(Pos.CENTER); 
+        btn.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;"); 
+        
+        switch (label) {
+                case "ADD USER":
+                    btn.setOnAction(e -> System.out.println("-> Action: Show Add User Form"));
+                    break;
+                case "VIEW ALL USERS":
+                    btn.setOnAction(e -> System.out.println("-> Action: Show All Users Table"));
+                    break;
+                case "SEARCH USER BY ID/NAME":
+                    btn.setOnAction(e -> System.out.println("-> Action: Show Search Dialog"));
+                    break;
+                case "UPDATE USER":
+                    btn.setOnAction(e -> System.out.println("-> Action: Show Update User Form"));
+                    break;
+                case "DELETE USER":
+                    btn.setOnAction(e -> System.out.println("-> Action: Show Delete Confirmation"));
+                    break;
+                case "RETURN TO MAIN MENU":
+                    btn.setOnAction(e -> {
+                        new AppFX().start(stage); 
+                    });
+                    break;
+            }
+            menu.getChildren().add(btn);
+        }
+    return menu;
+}
+
+    private static void handleManageLockerTypes(){
+
+    }
+
+    private static void handleManageLockers(){
+
+    }
+
+    private static void handleManageLockerLocations(){
+
+    }
+
+    private static void handleBooking(){
+
+    }
+
+    private static void handleCancellations(){
+
+    }
+
+    private static void handlePayments(){
+
+    }
+
+    private static void handleTransfers(){
+
+    }
+
+    private static void handleReports(){
+
+    }
+
+     /**
+     * shows it for 5 seconds, and then terminates the application.
+     * @param stage The primary stage of the application.
+     */
+    private static void handleExit(Stage stage) {        
+        StackPane goodbyeRoot = new StackPane();
+        Image goodbyeImage = new Image(AppFX.class.getResourceAsStream("goodbye.jpg"));
+        ImageView goodbyeView = new ImageView(goodbyeImage);
+        goodbyeView.fitWidthProperty().bind(stage.widthProperty());
+        goodbyeView.fitHeightProperty().bind(stage.heightProperty());
+        goodbyeView.setPreserveRatio(false);
+        goodbyeRoot.getChildren().add(goodbyeView);
+        Scene goodbyeScene = new Scene(goodbyeRoot, INITIAL_WIDTH, INITIAL_HEIGHT);
+        stage.setScene(goodbyeScene);
+        stage.centerOnScreen(); 
+
+        // 2. Set 5-second delay before closing
+        PauseTransition delay = new PauseTransition(Duration.seconds(5)); // 5-second delay
+        
+        // dispose after 5 sec delay
+        delay.setOnFinished(event -> {
+            stage.close();
+        });
+
+        delay.play();
     }
 
     public static void main(String[] args) {
