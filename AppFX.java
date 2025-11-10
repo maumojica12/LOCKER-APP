@@ -4,12 +4,15 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import javafx.scene.control.Label;
 
 public class AppFX extends Application {
 
@@ -179,7 +182,7 @@ private static VBox userMenuButton(String[] labels, int start, int end, Stage st
         
         switch (label) {
                 case "ADD USER":
-                    btn.setOnAction(e -> System.out.println("-> Action: Show Add User Form"));
+                    btn.setOnAction(e -> registerUser(stage));
                     break;
                 case "VIEW ALL USERS":
                     btn.setOnAction(e -> System.out.println("-> Action: Show All Users Table"));
@@ -202,6 +205,140 @@ private static VBox userMenuButton(String[] labels, int start, int end, Stage st
             menu.getChildren().add(btn);
         }
     return menu;
+}
+
+private static void registerUser(Stage stage) {
+    // Background image
+    Image backgroundImage = new Image(AppFX.class.getResourceAsStream("registerUser.jpg"));
+    ImageView backgroundView = new ImageView(backgroundImage);
+
+    // Root layout
+    StackPane root = new StackPane();
+    root.getChildren().add(backgroundView);
+
+    // --- Form Elements ---
+    VBox form = new VBox(15); // spacing between elements
+    form.setAlignment(Pos.TOP_CENTER);
+    
+    // Left padding moves the entire form block to the right. (e.g., 400)
+    final double FORM_LEFT_OFFSET = 400; 
+    form.setPadding(new Insets(220, 0, 0, FORM_LEFT_OFFSET)); 
+    
+    // Field size constants
+    double FIELD_WIDTH = 500; 
+    double FIELD_HEIGHT = 50;
+    double BUTTON_WIDTH = 240; 
+    double BUTTON_HEIGHT = 50;
+    
+    // --- Text Fields ---
+    TextField firstNameField = new TextField();
+    firstNameField.setPromptText("First Name");
+    firstNameField.setPrefSize(FIELD_WIDTH, FIELD_HEIGHT);
+    firstNameField.setMaxWidth(FIELD_WIDTH); 
+
+    TextField lastNameField = new TextField();
+    lastNameField.setPromptText("Last Name");
+    lastNameField.setPrefSize(FIELD_WIDTH, FIELD_HEIGHT);
+    lastNameField.setMaxWidth(FIELD_WIDTH);
+
+    TextField contactField = new TextField();
+    contactField.setPromptText("Contact Number");
+    contactField.setPrefSize(FIELD_WIDTH, FIELD_HEIGHT);
+    contactField.setMaxWidth(FIELD_WIDTH);
+
+    TextField emailField = new TextField();
+    emailField.setPromptText("Email Address");
+    emailField.setPrefSize(FIELD_WIDTH, FIELD_HEIGHT);
+    emailField.setMaxWidth(FIELD_WIDTH);
+
+    // --- Buttons ---
+    Button registerBtn = new Button("REGISTER");
+    registerBtn.setPrefSize(BUTTON_WIDTH, BUTTON_HEIGHT); 
+    registerBtn.setStyle("-fx-font-weight: bold; -fx-background-color: #2ecc71; -fx-text-fill: white;");
+
+    Button backBtn = new Button("BACK TO USER MENU");
+    backBtn.setPrefSize(BUTTON_WIDTH, BUTTON_HEIGHT); 
+    backBtn.setStyle("-fx-font-weight: bold; -fx-background-color: #e74c3c; -fx-text-fill: white;");
+
+    // --- Button Container (HBox) ---
+    HBox buttonContainer = new HBox(10); // spacing between buttons
+    buttonContainer.setAlignment(Pos.CENTER);
+    buttonContainer.getChildren().addAll(registerBtn, backBtn);
+    HBox.setMargin(buttonContainer, new Insets(0, 0, 0, -120)); 
+
+    // 1. ERROR/VALIDATION LABEL
+    Label errorMessageLabel = new Label();
+    errorMessageLabel.setMaxWidth(FIELD_WIDTH);
+    errorMessageLabel.setAlignment(Pos.CENTER);
+    VBox.setMargin(errorMessageLabel, new Insets(10, 0, 0, -220)); 
+    errorMessageLabel.setVisible(false); // Start hidden
+    
+    // 2. SUCCESS MESSAGE LABEL
+    Label successMessageLabel = new Label();
+    successMessageLabel.setMaxWidth(FIELD_WIDTH); 
+    successMessageLabel.setAlignment(Pos.CENTER);
+    // Move lower (Top: 30) and more to the left (Left: -220). ADJUST -220 for position.
+    VBox.setMargin(successMessageLabel, new Insets(-40, 0, 0, -290)); 
+    successMessageLabel.setVisible(false); // Start hidden
+
+    // Add both labels to the form
+    form.getChildren().addAll(firstNameField, lastNameField, contactField, emailField, buttonContainer, errorMessageLabel, successMessageLabel);
+    root.getChildren().add(form);
+
+    double INITIAL_WIDTH = 1300;
+    double INITIAL_HEIGHT = 700;
+    Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+
+    // Bind background to fill window
+    backgroundView.fitWidthProperty().bind(scene.widthProperty());
+    backgroundView.fitHeightProperty().bind(scene.heightProperty());
+    backgroundView.setPreserveRatio(false);
+
+    stage.setScene(scene);
+    stage.setTitle("Register User");
+    stage.show();
+
+    // --- Button Actions ---
+    registerBtn.setOnAction(e -> {
+        // Clear and hide both labels at the start
+        errorMessageLabel.setVisible(false);
+        successMessageLabel.setVisible(false);
+
+        String firstName = firstNameField.getText().trim();
+        String lastName = lastNameField.getText().trim();
+        String contact = contactField.getText().trim();
+        String email = emailField.getText().trim();
+
+        if (firstName.isEmpty() || lastName.isEmpty()) {
+            // Display required fields error using the ERROR label
+            errorMessageLabel.setText("First and Last Names are Required!");
+            errorMessageLabel.setStyle("-fx-text-fill: yellow;-fx-font-size: 16px; -fx-font-weight: bold;");
+            errorMessageLabel.setVisible(true);
+            return;
+        }
+
+        User newUser = new User(firstName, lastName, contact, email);
+        UserDAO userDAO = new UserDAO();
+        int generatedId = userDAO.addUser(newUser); 
+
+        if (generatedId > 0) {
+            // Display success message using the SUCCESS label
+            successMessageLabel.setText("User: "+ firstName + " " + lastName + "\nUser ID: " + generatedId + "\nRegistered Successfully!");
+            successMessageLabel.setStyle("-fx-text-fill:yellow; -fx-font-size: 16px; -fx-font-weight: bold;"); // Changed color for clear differentiation
+            successMessageLabel.setVisible(true);
+            
+            firstNameField.clear();
+            lastNameField.clear();
+            contactField.clear();
+            emailField.clear();
+        } else {
+            // Display database failure error using the ERROR label
+            errorMessageLabel.setText("Registration failed. Check database connection.");
+            errorMessageLabel.setStyle("-fx-text-fill: red; -fx-font-size: 16px; -fx-font-weight: bold;");
+            errorMessageLabel.setVisible(true);
+        }
+    });
+    backBtn.setOnAction(e -> handleManageUsers(stage));
 }
 
 private static void handleManageLocations(Stage stage) {
@@ -268,28 +405,32 @@ private static VBox locationMenuButton(String[] labels, int start, int end, Stag
     return menu;
 }
 
+    private static void handleManageLockerTypes(){
 
-private static void handleManageLockerTypes() {
+    }
 
-}
+    private static void handleBooking(){
 
-private static void handleManageLockers(){
+    }
 
-}
+    private static void handleCancellations(){
 
-private static void handleManageLockerLocations(){
+    }
 
-}
+    private static void handleTransfers(){
 
-private static void handleBooking(){
+    }
 
-}
+    private static void handleManageLockers(){
+       
+    }
 
-private static void handleCancellations(){
+    // generate reports
+    private static void handleReports(){
 
-}
+    }
 
-    private static void handlePaymentReport(Stage stage) {
+     private static void handlePaymentReport(Stage stage) {
         stage.setTitle("Luggage Locker Booking System - Payment and Release Management");
         Image locationBG = new Image(AppFX.class.getResourceAsStream("paymentMenu.jpg"));
         ImageView backgroundView = new ImageView(locationBG);
@@ -352,14 +493,6 @@ private static void handleCancellations(){
         }
         return menu;
     }
-
-    private static void handleTransfers(){
-
-}
-
-private static void handleReports(){
-
-}
 
      /**
      * shows it for 5 seconds, and then terminates the application.
