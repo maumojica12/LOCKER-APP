@@ -525,14 +525,31 @@ private static void handleCancellations(){
 
             switch (labels[i]) {
                 case "VIEW ALL PAYMENT":
-                    btn.setOnAction(e -> System.out.println("-> Action: Show All Locker Locations Table"));
+                    btn.setOnAction(e -> {
+                        // Opens the table-based Payment Viewer window
+                        PaymentViewer viewer = new PaymentViewer();
+                        try {
+                            viewer.start(new Stage());
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                        }
+                    });
                     break;
+
                 case "RELEASE LOCKER (PROCESS PAYMENT)":
-                    btn.setOnAction(e -> System.out.println("-> Action: Show Available Lockers in All Locations"));
+                    btn.setOnAction(e -> {
+                        // TODO: open your payment processing / locker release form
+                        System.out.println("-> Action: Process Payment and Release Locker");
+                    });
                     break;
+
                 case "SEARCH PAYMENT BY ID":
-                    btn.setOnAction(e -> System.out.println("-> Action: Show Lockers in Specific Location"));
+                    btn.setOnAction(e -> {
+                        // TODO: open your Search Payment by ID window
+                        System.out.println("-> Action: Search Payment by ID");
+                    });
                     break;
+
                 case "RETURN TO MAIN MENU":
                     btn.setOnAction(e -> {
                         new AppFX().start(stage);
