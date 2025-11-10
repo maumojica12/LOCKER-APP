@@ -405,9 +405,62 @@ private static VBox locationMenuButton(String[] labels, int start, int end, Stag
     return menu;
 }
 
+private static void handleManageLockerTypes(Stage stage) {
+    stage.setTitle("Luggage Locker Booking System - Locker Type Management");    
+    Image bg = new Image(AppFX.class.getResourceAsStream("lockerTypeMenu.jpg"));
+    ImageView backgroundView = new ImageView(bg);
 
-private static void handleManageLockerTypes() {
+    String[] menuLabels = {
+        "VIEW ALL LOCKER TYPES",
+        "SEARCH LOCKER TYPE",
+        "RETURN TO MAIN MENU"
+    };
 
+    VBox leftMenu = lockerTypeMenuButton(menuLabels, 0, 2, stage);
+    VBox rightMenu = lockerTypeMenuButton(menuLabels, 2, 3, stage);
+
+    StackPane root = new StackPane();
+    root.getChildren().addAll(backgroundView, leftMenu, rightMenu);
+    StackPane.setAlignment(leftMenu, Pos.CENTER_LEFT);
+    StackPane.setAlignment(rightMenu, Pos.CENTER_RIGHT);
+
+    Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+    backgroundView.fitWidthProperty().bind(scene.widthProperty());
+    backgroundView.fitHeightProperty().bind(scene.heightProperty());
+    backgroundView.setPreserveRatio(false);
+
+    stage.setScene(scene);
+    stage.show();
+}
+
+private static VBox lockerTypeMenuButton(String[] labels, int start, int end, Stage stage){
+    VBox menu = new VBox(25);
+    menu.setPadding(new Insets(450, 320, 320, 320));
+    menu.setMaxWidth(VBox.USE_PREF_SIZE);
+
+    for(int i = start; i < end; i++) {
+        if(i >= labels.length) break;
+        Button btn = new Button(labels[i]);
+        btn.setMinWidth(BUTTON_WIDTH);
+        btn.setMinHeight(BUTTON_HEIGHT);
+        btn.setMaxWidth(BUTTON_WIDTH);
+        btn.setAlignment(Pos.CENTER);
+        btn.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+
+        switch(labels[i]){
+            case "VIEW ALL LOCKER TYPES":
+                btn.setOnAction(e -> System.out.println("-> Action: Display All Locker Types Table"));
+                break;
+            case "SEARCH LOCKER TYPE":
+                btn.setOnAction(e -> System.out.println("-> Action: Search Locker Type by ID/Size"));
+                break;
+            case "RETURN TO MAIN MENU":
+                btn.setOnAction(e -> new AppFX().start(stage));
+                break;
+        }
+        menu.getChildren().add(btn);
+    }
+    return menu;
 }
 
 private static void handleManageLockers(){
@@ -418,26 +471,14 @@ private static void handleManageLockerLocations(){
 
     }
 
-    private static void handleBooking(){
+private static void handleBooking(){
 
-    }
+}
 
-    private static void handleCancellations(){
+private static void handleCancellations(){
 
-    }
+}
 
-    private static void handleTransfers(){
-
-    }
-
-    private static void handleManageLockers(){
-       
-    }
-
-    // generate reports
-    private static void handleReports(){
-
-    }
 
      private static void handlePaymentReport(Stage stage) {
         stage.setTitle("Luggage Locker Booking System - Payment and Release Management");
@@ -503,10 +544,67 @@ private static void handleManageLockerLocations(){
         return menu;
     }
 
-    private static void handleTransfers(){
+private static void handleTransfers(Stage stage) {
+    stage.setTitle("Luggage Locker Booking System - Locker Transfer Management");
+    Image bg = new Image(AppFX.class.getResourceAsStream("lockerTransferMenu.jpg"));
+    ImageView backgroundView = new ImageView(bg);
 
+    String[] menuLabels = {
+        "LOCKER TRANSFER",
+        "VIEW ALL TRANSFERS",
+        "SEARCH TRANSFER BY ID",
+        "RETURN TO MAIN MENU"
+    };
+
+    VBox leftMenu = lockerTransferMenuButton(menuLabels, 0, 2, stage);
+    VBox rightMenu = lockerTransferMenuButton(menuLabels, 2, 4, stage);
+
+    StackPane root = new StackPane();
+    root.getChildren().addAll(backgroundView, leftMenu, rightMenu);
+    StackPane.setAlignment(leftMenu, Pos.CENTER_LEFT);
+    StackPane.setAlignment(rightMenu, Pos.CENTER_RIGHT);
+
+    Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+    backgroundView.fitWidthProperty().bind(scene.widthProperty());
+    backgroundView.fitHeightProperty().bind(scene.heightProperty());
+    backgroundView.setPreserveRatio(false);
+
+    stage.setScene(scene);
+    stage.show();
 }
 
+private static VBox lockerTransferMenuButton(String[] labels, int start, int end, Stage stage) {
+    VBox menu = new VBox(25);
+    menu.setPadding(new Insets(450, 320, 320, 320));
+    menu.setMaxWidth(VBox.USE_PREF_SIZE);
+
+    for(int i = start; i < end; i++) {
+        if(i >= labels.length) break;
+        Button btn = new Button(labels[i]);
+        btn.setMinWidth(BUTTON_WIDTH);
+        btn.setMinHeight(BUTTON_HEIGHT);
+        btn.setMaxWidth(BUTTON_WIDTH);
+        btn.setAlignment(Pos.CENTER);
+        btn.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+
+        switch(labels[i]){
+            case "LOCKER TRANSFER":
+                btn.setOnAction(e -> System.out.println("-> Action: Perform Locker Transfer"));
+                break;
+            case "VIEW ALL TRANSFERS":
+                btn.setOnAction(e -> System.out.println("-> Action: Display All Transfers Table"));
+                break;
+            case "SEARCH TRANSFER BY ID":
+                btn.setOnAction(e -> System.out.println("-> Action: Search Transfer by ID"));
+                break;
+            case "RETURN TO MAIN MENU":
+                btn.setOnAction(e -> new AppFX().start(stage));
+                break;
+        }
+        menu.getChildren().add(btn);
+    }
+    return menu;
+}
 private static void handleReports(){
 
 }
