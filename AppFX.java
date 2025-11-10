@@ -107,7 +107,7 @@ public class AppFX extends Application {
                     btn.setOnAction(e -> handleManageLockers());
                     break;
                 case "MANAGE LOCKER LOCATIONS":
-                    btn.setOnAction(e -> handleManageLockerLocations());
+                    btn.setOnAction(e -> handleManageLocations(primaryStage));
                     break;
                 case "BOOK/MANAGE RESERVATIONS":
                     btn.setOnAction(e -> handleBooking());
@@ -116,7 +116,7 @@ public class AppFX extends Application {
                     btn.setOnAction(e -> handleCancellations());
                     break;
                 case "MANAGE PAYMENTS":
-                    btn.setOnAction(e -> handlePayments());
+                    btn.setOnAction(e -> handlePaymentReport(primaryStage));
                     break;
                 case "MANAGE TRANSFERS":
                     btn.setOnAction(e -> handleTransfers());
@@ -204,37 +204,162 @@ private static VBox userMenuButton(String[] labels, int start, int end, Stage st
     return menu;
 }
 
-    private static void handleManageLockerTypes(){
+private static void handleManageLocations(Stage stage) {
+    stage.setTitle("Luggage Locker Booking System - Location Management");
+    Image locationBG = new Image(AppFX.class.getResourceAsStream("locationMenu.jpg"));
+    ImageView backgroundView = new ImageView(locationBG);
+
+    String[] menuLabels = {
+            "VIEW ALL LOCKER LOCATION",
+            "VIEW ALL AVAILABLE LOCKER IN LOCATION",
+            "VIEW LOCKERS IN LOCATION",
+            "RETURN TO MAIN MENU"
+    };
+
+    VBox leftMenu = locationMenuButton(menuLabels, 0, 2, stage); // left side
+    VBox rightMenu = locationMenuButton(menuLabels, 2, 4, stage); // right side
+
+    StackPane root = new StackPane();
+    root.getChildren().addAll(backgroundView, leftMenu, rightMenu);
+    StackPane.setAlignment(leftMenu, Pos.CENTER_LEFT);
+    StackPane.setAlignment(rightMenu, Pos.CENTER_RIGHT);
+
+    Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+    backgroundView.fitWidthProperty().bind(scene.widthProperty());
+    backgroundView.fitHeightProperty().bind(scene.heightProperty());
+    backgroundView.setPreserveRatio(false);
+    stage.setScene(scene);
+    stage.show();
+
+}
+
+private static VBox locationMenuButton(String[] labels, int start, int end, Stage stage) {
+    VBox menu = new VBox(25);
+    menu.setPadding(new Insets(450, 320, 320, 320));
+    menu.setMaxWidth(VBox.USE_PREF_SIZE);
+
+    for (int i = start; i < end; i++) {
+        if (i >= labels.length) break;
+        Button btn = new Button(labels[i]);
+        btn.setMinWidth(BUTTON_WIDTH);
+        btn.setMinHeight(BUTTON_HEIGHT);
+        btn.setMaxWidth(BUTTON_WIDTH);
+        btn.setAlignment(Pos.CENTER);
+        btn.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+
+        switch (labels[i]) {
+            case "VIEW ALL LOCKER LOCATION":
+                btn.setOnAction(e -> System.out.println("-> Action: Show All Locker Locations Table"));
+                break;
+            case "VIEW ALL AVAILABLE LOCKER IN LOCATION":
+                btn.setOnAction(e -> System.out.println("-> Action: Show Available Lockers in All Locations"));
+                break;
+            case "VIEW LOCKERS IN LOCATION":
+                btn.setOnAction(e -> System.out.println("-> Action: Show Lockers in Specific Location"));
+                break;
+            case "RETURN TO MAIN MENU":
+                btn.setOnAction(e -> {
+                    new AppFX().start(stage);
+                });
+                break;
+        }
+        menu.getChildren().add(btn);
+    }
+    return menu;
+}
+
+
+private static void handleManageLockerTypes() {
+
+}
+
+private static void handleManageLockers(){
+
+}
+
+private static void handleManageLockerLocations(){
+
+}
+
+private static void handleBooking(){
+
+}
+
+private static void handleCancellations(){
+
+}
+
+    private static void handlePaymentReport(Stage stage) {
+        stage.setTitle("Luggage Locker Booking System - Payment and Release Management");
+        Image locationBG = new Image(AppFX.class.getResourceAsStream("paymentMenu.jpg"));
+        ImageView backgroundView = new ImageView(locationBG);
+
+        String[] menuLabels = {
+                "VIEW ALL PAYMENT",
+                "RELEASE LOCKER (PROCESS PAYMENT)",
+                "SEARCH PAYMENT BY ID",
+                "RETURN TO MAIN MENU"
+        };
+
+        VBox leftMenu = paymentMenuButton(menuLabels, 0, 2, stage); // left side
+        VBox rightMenu = paymentMenuButton(menuLabels, 2, 4, stage); // right side
+
+        StackPane root = new StackPane();
+        root.getChildren().addAll(backgroundView, leftMenu, rightMenu);
+        StackPane.setAlignment(leftMenu, Pos.CENTER_LEFT);
+        StackPane.setAlignment(rightMenu, Pos.CENTER_RIGHT);
+
+        Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+        backgroundView.fitWidthProperty().bind(scene.widthProperty());
+        backgroundView.fitHeightProperty().bind(scene.heightProperty());
+        backgroundView.setPreserveRatio(false);
+        stage.setScene(scene);
+        stage.show();
 
     }
 
-    private static void handleManageLockers(){
+    private static VBox paymentMenuButton(String[] labels, int start, int end, Stage stage) {
+        VBox menu = new VBox(25);
+        menu.setPadding(new Insets(450, 320, 320, 320));
+        menu.setMaxWidth(VBox.USE_PREF_SIZE);
 
-    }
+        for (int i = start; i < end; i++) {
+            if (i >= labels.length) break;
+            Button btn = new Button(labels[i]);
+            btn.setMinWidth(BUTTON_WIDTH);
+            btn.setMinHeight(BUTTON_HEIGHT);
+            btn.setMaxWidth(BUTTON_WIDTH);
+            btn.setAlignment(Pos.CENTER);
+            btn.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
 
-    private static void handleManageLockerLocations(){
-
-    }
-
-    private static void handleBooking(){
-
-    }
-
-    private static void handleCancellations(){
-
-    }
-
-    private static void handlePayments(){
-
+            switch (labels[i]) {
+                case "VIEW ALL PAYMENT":
+                    btn.setOnAction(e -> System.out.println("-> Action: Show All Locker Locations Table"));
+                    break;
+                case "RELEASE LOCKER (PROCESS PAYMENT)":
+                    btn.setOnAction(e -> System.out.println("-> Action: Show Available Lockers in All Locations"));
+                    break;
+                case "SEARCH PAYMENT BY ID":
+                    btn.setOnAction(e -> System.out.println("-> Action: Show Lockers in Specific Location"));
+                    break;
+                case "RETURN TO MAIN MENU":
+                    btn.setOnAction(e -> {
+                        new AppFX().start(stage);
+                    });
+                    break;
+            }
+            menu.getChildren().add(btn);
+        }
+        return menu;
     }
 
     private static void handleTransfers(){
 
-    }
+}
 
-    private static void handleReports(){
+private static void handleReports(){
 
-    }
+}
 
      /**
      * shows it for 5 seconds, and then terminates the application.
