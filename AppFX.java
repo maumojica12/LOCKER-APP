@@ -1,3 +1,6 @@
+import java.util.ArrayList;
+import java.util.List;
+
 import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -10,9 +13,13 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 
 public class AppFX extends Application {
 
@@ -185,7 +192,7 @@ private static VBox userMenuButton(String[] labels, int start, int end, Stage st
                     btn.setOnAction(e -> registerUser(stage));
                     break;
                 case "VIEW ALL USERS":
-                    btn.setOnAction(e -> System.out.println("-> Action: Show All Users Table"));
+                    btn.setOnAction(e -> viewAllUser(stage));
                     break;
                 case "SEARCH USER BY ID/NAME":
                     btn.setOnAction(e -> System.out.println("-> Action: Show Search Dialog"));
@@ -341,6 +348,100 @@ private static void registerUser(Stage stage) {
     backBtn.setOnAction(e -> handleManageUsers(stage));
 }
 
+private static void viewAllUser(Stage stage) {
+    // --- Background setup ---
+    Image backgroundImage = new Image(AppFX.class.getResourceAsStream("viewUsers.jpg"));
+    ImageView backgroundView = new ImageView(backgroundImage);
+    backgroundView.setPreserveRatio(false);
+
+    StackPane root = new StackPane();
+    double INITIAL_WIDTH = 1300;
+    double INITIAL_HEIGHT = 700;
+    Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+
+    backgroundView.fitWidthProperty().bind(scene.widthProperty());
+    backgroundView.fitHeightProperty().bind(scene.heightProperty());
+    root.getChildren().add(backgroundView);
+
+    // --- Scrollable user list setup ---
+    ScrollPane scrollPane = new ScrollPane();
+    scrollPane.setFitToWidth(true);
+    scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+    scrollPane.setPrefViewportHeight(500); // Adjust visible scroll area height
+
+    VBox userList = new VBox(15);
+    userList.setPadding(new Insets(10));
+    userList.setAlignment(Pos.TOP_CENTER);
+
+    // --- Load users from DB ---
+    UserDAO userDAO = new UserDAO();
+    List<User> users = new ArrayList<>();
+
+    try {
+        users = userDAO.searchUsersByName("");
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+    if (users.isEmpty()) {
+        Label noUser = new Label("No users found in the database.");
+        noUser.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        noUser.setTextFill(Color.WHITE);
+        userList.getChildren().add(noUser);
+    } else {
+        for (User user : users) {
+            VBox card = new VBox(5);
+            card.setPadding(new Insets(15));
+            card.setPrefWidth(900); // narrower than before for balance
+            card.setStyle(
+                "-fx-background-color: rgba(255,255,255,0.85); " +
+                "-fx-background-radius: 12; " +
+                "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.25), 10, 0, 0, 5);"
+            );
+
+            Label id = new Label("User ID: " + user.getUserID());
+            Label name = new Label("Name: " + user.getFirstName() + " " + user.getLastName());
+            Label contact = new Label("Contact: " + (user.getUserContact() != null ? user.getUserContact() : "N/A"));
+            Label email = new Label("Email: " + (user.getUserEmail() != null ? user.getUserEmail() : "N/A"));
+
+            id.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+            name.setFont(Font.font("Arial", 14));
+            contact.setFont(Font.font("Arial", 14));
+            email.setFont(Font.font("Arial", 14));
+
+            id.setTextFill(Color.BLACK);
+            name.setTextFill(Color.BLACK);
+            contact.setTextFill(Color.BLACK);
+            email.setTextFill(Color.BLACK);
+
+            card.getChildren().addAll(id, name, contact, email);
+            userList.getChildren().add(card);
+        }
+    }
+
+    scrollPane.setContent(userList);
+
+    // --- Back Button ---
+    Button backBtn = new Button("Back to User Menu");
+    backBtn.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+    backBtn.setPrefWidth(180); 
+    backBtn.setPrefHeight(40);
+    backBtn.setStyle("-fx-background-color: #003366; -fx-text-fill: white; -fx-background-radius: 8;");
+    backBtn.setOnAction(e -> handleManageUsers(stage));
+
+    // --- Layout positioning ---
+    VBox content = new VBox(30, scrollPane, backBtn);
+    content.setAlignment(Pos.TOP_CENTER);
+    content.setPadding(new Insets(230, 20, 40, 20)); // scroll pane position lower
+
+    root.getChildren().add(content);
+    StackPane.setAlignment(content, Pos.TOP_CENTER);
+
+    stage.setScene(scene);
+    stage.setTitle("View All Users");
+    stage.show();
+}
+
 private static void handleManageLocations(Stage stage) {
     stage.setTitle("Luggage Locker Booking System - Location Management");
     Image locationBG = new Image(AppFX.class.getResourceAsStream("locationMenu.jpg"));
@@ -367,7 +468,6 @@ private static void handleManageLocations(Stage stage) {
     backgroundView.setPreserveRatio(false);
     stage.setScene(scene);
     stage.show();
-
 }
 
 private static VBox locationMenuButton(String[] labels, int start, int end, Stage stage) {
