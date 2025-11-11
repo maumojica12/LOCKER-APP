@@ -569,7 +569,7 @@ private static void handleManageLockers(){
 
 private static void handleManageLockerLocations(){
 
-    }
+}
 
 private static void handleBooking(){
 
