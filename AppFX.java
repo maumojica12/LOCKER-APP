@@ -6,6 +6,7 @@ import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
@@ -1226,10 +1227,12 @@ private static void handleCancellations(){
         });
     }
 
-    private static void handleTransfers(Stage stage) {
+// --- HANDLE MANAGE LOCKER TRANSFERS ---
+private static void handleTransfers(Stage stage) {
     stage.setTitle("Luggage Locker Booking System - Locker Transfer Management");
     Image bg = new Image(AppFX.class.getResourceAsStream("lockerTransferMenu.jpg"));
     ImageView backgroundView = new ImageView(bg);
+    backgroundView.setPreserveRatio(false);
 
     String[] menuLabels = {
         "LOCKER TRANSFER",
@@ -1249,7 +1252,6 @@ private static void handleCancellations(){
     Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
     backgroundView.fitWidthProperty().bind(scene.widthProperty());
     backgroundView.fitHeightProperty().bind(scene.heightProperty());
-    backgroundView.setPreserveRatio(false);
 
     stage.setScene(scene);
     stage.show();
@@ -1260,8 +1262,8 @@ private static VBox lockerTransferMenuButton(String[] labels, int start, int end
     menu.setPadding(new Insets(450, 320, 320, 320));
     menu.setMaxWidth(VBox.USE_PREF_SIZE);
 
-    for(int i = start; i < end; i++) {
-        if(i >= labels.length) break;
+    for (int i = start; i < end; i++) {
+        if (i >= labels.length) break;
         Button btn = new Button(labels[i]);
         btn.setMinWidth(BUTTON_WIDTH);
         btn.setMinHeight(BUTTON_HEIGHT);
@@ -1269,15 +1271,15 @@ private static VBox lockerTransferMenuButton(String[] labels, int start, int end
         btn.setAlignment(Pos.CENTER);
         btn.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
 
-        switch(labels[i]){
+        switch (labels[i]) {
             case "LOCKER TRANSFER":
-                btn.setOnAction(e -> System.out.println("-> Action: Perform Locker Transfer"));
+                btn.setOnAction(e -> performLockerTransfer(stage));
                 break;
             case "VIEW ALL TRANSFERS":
-                btn.setOnAction(e -> System.out.println("-> Action: Display All Transfers Table"));
+                btn.setOnAction(e -> viewAllTransfers(stage));
                 break;
             case "SEARCH TRANSFER BY ID":
-                btn.setOnAction(e -> System.out.println("-> Action: Search Transfer by ID"));
+                btn.setOnAction(e -> searchTransferByID(stage));
                 break;
             case "RETURN TO MAIN MENU":
                 btn.setOnAction(e -> new AppFX().start(stage));
@@ -1287,6 +1289,184 @@ private static VBox lockerTransferMenuButton(String[] labels, int start, int end
     }
     return menu;
 }
+
+private static void performLockerTransfer(Stage stage) {
+    stage.setTitle("Perform Locker Transfer");
+    Image bg = new Image(AppFX.class.getResourceAsStream("lockerTransferMenu.jpg"));
+    ImageView backgroundView = new ImageView(bg);
+    backgroundView.setPreserveRatio(false);
+
+    Label bookingLabel = new Label("Booking Reference:");
+    TextField bookingField = new TextField();
+    Label oldLockerLabel = new Label("Old Locker ID:");
+    TextField oldLockerField = new TextField();
+    Label newLockerLabel = new Label("New Locker ID:");
+    TextField newLockerField = new TextField();
+    Label amountLabel = new Label("Adjustment Amount:");
+    TextField amountField = new TextField();
+
+    Button submitBtn = new Button("Submit Transfer");
+    submitBtn.setStyle("-fx-font-weight: bold; -fx-background-color: #003366; -fx-text-fill: white;");
+    Button backBtn = new Button("Back to Transfer Menu");
+    backBtn.setStyle("-fx-font-weight: bold; -fx-background-color: #003366; -fx-text-fill: white;");
+    backBtn.setOnAction(e -> handleTransfers(stage));
+
+    VBox form = new VBox(15, bookingLabel, bookingField,
+            oldLockerLabel, oldLockerField,
+            newLockerLabel, newLockerField,
+            amountLabel, amountField,
+            submitBtn, backBtn);
+    form.setPadding(new Insets(100, 50, 50, 100));
+
+    StackPane root = new StackPane();
+    root.getChildren().addAll(backgroundView, form);
+
+    Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+    backgroundView.fitWidthProperty().bind(scene.widthProperty());
+    backgroundView.fitHeightProperty().bind(scene.heightProperty());
+    stage.setScene(scene);
+    stage.show();
+
+    submitBtn.setOnAction(e -> {
+        try {
+            String bookingRef = bookingField.getText().trim();
+            int oldLockerID = Integer.parseInt(oldLockerField.getText().trim());
+            int newLockerID = Integer.parseInt(newLockerField.getText().trim());
+            double adjAmount = Double.parseDouble(amountField.getText().trim());
+
+            LockerTransfer transfer = new LockerTransfer(bookingRef, LocalDateTime.now(), adjAmount, oldLockerID, newLockerID);
+            int id = LockerTransferDAO.addTransfer(transfer);
+
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Transfer Successful");
+            alert.setHeaderText(null);
+            alert.setContentText("Transfer ID: " + id + " created successfully.");
+            alert.showAndWait();
+
+            handleTransfers(stage);
+
+        } catch (NumberFormatException ex) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Input Error");
+            alert.setHeaderText(null);
+            alert.setContentText("Please enter valid numbers for Locker IDs and Adjustment Amount.");
+            alert.showAndWait();
+        }
+    });
+}
+
+private static void viewAllTransfers(Stage stage) {
+    stage.setTitle("View All Locker Transfers");
+    Image bg = new Image(AppFX.class.getResourceAsStream("lockerTransferMenu.jpg"));
+    ImageView backgroundView = new ImageView(bg);
+    backgroundView.setPreserveRatio(false);
+
+    VBox transferList = new VBox(15);
+    transferList.setPadding(new Insets(10));
+
+    List<LockerTransfer> transfers = LockerTransferDAO.getAllTransfers();
+    if (transfers.isEmpty()) {
+        transferList.getChildren().add(new Label("No transfers found."));
+    } else {
+        for (LockerTransfer t : transfers) {
+            VBox card = new VBox(5);
+            card.setPadding(new Insets(10));
+            card.setStyle("-fx-background-color: rgba(255,255,255,0.85); -fx-background-radius: 10;");
+            Label info = new Label("ID: " + t.getTransferID() +
+                    ", Booking: " + t.getBookingReference() +
+                    ", Date: " + t.getTransferDate() +
+                    ", Old Locker: " + t.getOldLockerID() +
+                    ", New Locker: " + t.getNewLockerID() +
+                    ", Adjustment: ₱" + t.getAdjustmentAmount());
+            card.getChildren().add(info);
+            transferList.getChildren().add(card);
+        }
+    }
+
+    ScrollPane scrollPane = new ScrollPane(transferList);
+    scrollPane.setFitToWidth(true);
+    scrollPane.setPrefViewportHeight(500);
+
+    Button backBtn = new Button("Back to Transfer Menu");
+    backBtn.setStyle("-fx-font-weight: bold; -fx-background-color: #003366; -fx-text-fill: white;");
+    backBtn.setOnAction(e -> handleTransfers(stage));
+
+    VBox content = new VBox(20, scrollPane, backBtn);
+    content.setPadding(new Insets(150, 20, 20, 20));
+    content.setAlignment(Pos.TOP_CENTER);
+
+    StackPane root = new StackPane(backgroundView, content);
+
+    Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+    backgroundView.fitWidthProperty().bind(scene.widthProperty());
+    backgroundView.fitHeightProperty().bind(scene.heightProperty());
+    stage.setScene(scene);
+    stage.show();
+}
+
+private static void searchTransferByID(Stage stage) {
+    stage.setTitle("Search Transfer by ID");
+    Image bg = new Image(AppFX.class.getResourceAsStream("lockerTransferMenu.jpg"));
+    ImageView backgroundView = new ImageView(bg);
+    backgroundView.setPreserveRatio(false);
+
+    Label idLabel = new Label("Transfer ID:");
+    TextField idField = new TextField();
+    Button searchBtn = new Button("Search");
+    searchBtn.setStyle("-fx-font-weight: bold; -fx-background-color: #003366; -fx-text-fill: white;");
+    Button backBtn = new Button("Back to Transfer Menu");
+    backBtn.setStyle("-fx-font-weight: bold; -fx-background-color: #003366; -fx-text-fill: white;");
+    backBtn.setOnAction(e -> handleTransfers(stage));
+
+    VBox inputBox = new VBox(15, idLabel, idField, searchBtn, backBtn);
+    inputBox.setPadding(new Insets(150, 50, 50, 150));
+
+    VBox resultBox = new VBox(15);
+    ScrollPane scrollPane = new ScrollPane(resultBox);
+    scrollPane.setFitToWidth(true);
+    scrollPane.setPrefViewportHeight(500);
+
+    HBox mainArea = new HBox(50, inputBox, scrollPane);
+    mainArea.setPadding(new Insets(50, 20, 0, 50));
+
+    StackPane root = new StackPane(backgroundView, mainArea);
+    Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+    backgroundView.fitWidthProperty().bind(scene.widthProperty());
+    backgroundView.fitHeightProperty().bind(scene.heightProperty());
+
+    stage.setScene(scene);
+    stage.show();
+
+    searchBtn.setOnAction(e -> {
+        resultBox.getChildren().clear();
+        try {
+            int id = Integer.parseInt(idField.getText().trim());
+            LockerTransfer transfer = LockerTransferDAO.getTransferByID(id);
+            if (transfer == null) {
+                resultBox.getChildren().add(new Label("No transfer found for ID " + id));
+            } else {
+                VBox card = new VBox(5);
+                card.setPadding(new Insets(10));
+                card.setStyle("-fx-background-color: rgba(255,255,255,0.85); -fx-background-radius: 10;");
+                Label info = new Label("ID: " + transfer.getTransferID() +
+                        ", Booking: " + transfer.getBookingReference() +
+                        ", Date: " + transfer.getTransferDate() +
+                        ", Old Locker: " + transfer.getOldLockerID() +
+                        ", New Locker: " + transfer.getNewLockerID() +
+                        ", Adjustment: ₱" + transfer.getAdjustmentAmount());
+                card.getChildren().add(info);
+                resultBox.getChildren().add(card);
+            }
+        } catch (NumberFormatException ex) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Input Error");
+            alert.setHeaderText(null);
+            alert.setContentText("Please enter a valid numeric Transfer ID.");
+            alert.showAndWait();
+        }
+    });
+}
+
 private static void handleReports(){
 
 }
