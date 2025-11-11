@@ -195,7 +195,7 @@ private static VBox userMenuButton(String[] labels, int start, int end, Stage st
                     btn.setOnAction(e -> viewAllUser(stage));
                     break;
                 case "SEARCH USER BY ID/NAME":
-                    btn.setOnAction(e -> System.out.println("-> Action: Show Search Dialog"));
+                    btn.setOnAction(e -> searchUser(stage));
                     break;
                 case "UPDATE USER":
                     btn.setOnAction(e -> System.out.println("-> Action: Show Update User Form"));
@@ -442,6 +442,171 @@ private static void viewAllUser(Stage stage) {
     stage.show();
 }
 
+private static void searchUser(Stage stage) {
+    // --- Background setup ---
+    Image backgroundImage = new Image(AppFX.class.getResourceAsStream("searchUser.jpg"));
+    ImageView backgroundView = new ImageView(backgroundImage);
+    backgroundView.setPreserveRatio(false);
+
+    StackPane root = new StackPane();
+    double INITIAL_WIDTH = 1300;
+    double INITIAL_HEIGHT = 700;
+    Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+
+    backgroundView.fitWidthProperty().bind(scene.widthProperty());
+    backgroundView.fitHeightProperty().bind(scene.heightProperty());
+    root.getChildren().add(backgroundView);
+
+    // --- Search Input Fields + Button ---
+    Label nameLabel = new Label("Search by Name:");
+    nameLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+    nameLabel.setTextFill(Color.BLACK);
+
+    TextField nameField = new TextField();
+    nameField.setPromptText("Enter user name");
+    nameField.setPrefWidth(300);
+    nameField.setMaxWidth(300);
+    nameField.setStyle("-fx-pref-height: 50px; -fx-font-size: 20px;");
+
+    Label idLabel = new Label("Search by User ID:");
+    idLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+    idLabel.setTextFill(Color.BLACK);
+
+    TextField idField = new TextField();
+    idField.setPromptText("Enter user ID");
+    idField.setPrefWidth(300);
+    idField.setMaxWidth(300);
+    idField.setStyle("-fx-pref-height: 50px; -fx-font-size: 20px;");
+
+    Button searchBtn = new Button("Search");
+    searchBtn.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+    searchBtn.setStyle("-fx-background-color: #003366; -fx-text-fill: white; -fx-background-radius: 8;");
+    searchBtn.setPrefWidth(150);
+    searchBtn.setPrefHeight(40);
+
+    // --- Search Input Fields + Button ---
+VBox searchBox = new VBox(10, nameLabel, nameField, idLabel, idField, searchBtn);
+searchBox.setAlignment(Pos.TOP_LEFT);
+searchBox.setPadding(new Insets(160, 0, 0, 120)); // top, right, bottom, left
+
+// --- Scrollable Results ---
+VBox userList = new VBox(15);
+userList.setPadding(new Insets(10));
+userList.setAlignment(Pos.TOP_CENTER);
+
+ScrollPane scrollPane = new ScrollPane(userList);
+scrollPane.setFitToWidth(true);
+scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+scrollPane.setPrefViewportWidth(600);
+scrollPane.setPrefViewportHeight(500);
+
+// Put scrollPane in its own container to adjust position independently
+VBox scrollContainer = new VBox(scrollPane);
+scrollContainer.setAlignment(Pos.TOP_RIGHT); // keep it on the right
+scrollContainer.setPadding(new Insets(150, 0, 0, 100)); 
+// top=50 (so it’s a little lower than the very top)
+// right=80 (distance from right edge)
+// bottom=0, left=0
+
+// --- Back Button ---
+Button backBtn = new Button("Back to User Menu");
+backBtn.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+backBtn.setPrefWidth(180);
+backBtn.setPrefHeight(40);
+backBtn.setStyle("-fx-background-color: #003366; -fx-text-fill: white; -fx-background-radius: 8;");
+backBtn.setOnAction(e -> handleManageUsers(stage));
+
+HBox mainArea = new HBox(50, searchBox, scrollContainer); // 50px spacing
+mainArea.setAlignment(Pos.TOP_LEFT);
+mainArea.setPadding(new Insets(50, 20, 0, 80)); // adjust top/left as needed
+
+// Put backBtn in its own container to adjust position independently
+HBox backContainer = new HBox(backBtn);
+backContainer.setAlignment(Pos.CENTER_RIGHT); // adjust as needed
+backContainer.setPadding(new Insets(20, 50, 0, 0));
+
+// --- Combine everything in rootContent ---
+VBox rootContent = new VBox(30, mainArea, backContainer);
+rootContent.setAlignment(Pos.TOP_LEFT);
+rootContent.setPadding(new Insets(50, 20, 40, 20));
+
+root.getChildren().add(rootContent);
+StackPane.setAlignment(rootContent, Pos.TOP_CENTER);
+
+    stage.setScene(scene);
+    stage.setTitle("Search User");
+    stage.show();
+
+    // --- Search Button Action ---
+    searchBtn.setOnAction(e -> {
+        userList.getChildren().clear(); // clear previous results
+        UserDAO userDAO = new UserDAO();
+        List<User> results = new ArrayList<>();
+
+        String nameQuery = nameField.getText().trim();
+        String idQuery = idField.getText().trim();
+
+        try {
+            if (!idQuery.isEmpty()) {
+                try {
+                    int id = Integer.parseInt(idQuery);
+                    User user = userDAO.getUserById(id);
+                    if (user != null) results.add(user);
+                } catch (NumberFormatException ex) {
+                    Label invalid = new Label("Invalid User ID format. Please enter a number.");
+                    invalid.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+                    invalid.setTextFill(Color.RED);
+                    userList.getChildren().add(invalid);
+                    return;
+                }
+            } else {
+                results = userDAO.searchUsersByName(nameQuery);
+            }
+
+            if (results.isEmpty()) {
+                Label noResult = new Label("No users found matching your search.");
+                noResult.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+                noResult.setTextFill(Color.BLACK);
+                noResult.setPadding(new Insets(220,0, 0, 220)); // top, right, bottom, left
+                userList.getChildren().add(noResult);
+            } else {
+                for (User user : results) {
+                    VBox card = new VBox(5);
+                    card.setPadding(new Insets(15));
+                    card.setPrefWidth(900);
+                    card.setStyle(
+                        "-fx-background-color: rgba(255,255,255,0.85); " +
+                        "-fx-background-radius: 12; " +
+                        "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.25), 10, 0, 0, 5);"
+                    );
+
+                    Label idLbl = new Label("User ID: " + user.getUserID());
+                    Label nameLbl = new Label("Name: " + user.getFirstName() + " " + user.getLastName());
+                    Label contactLbl = new Label("Contact: " +
+                            (user.getUserContact() != null ? user.getUserContact() : "N/A"));
+                    Label emailLbl = new Label("Email: " +
+                            (user.getUserEmail() != null ? user.getUserEmail() : "N/A"));
+
+                    idLbl.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+                    nameLbl.setFont(Font.font("Arial", 14));
+                    contactLbl.setFont(Font.font("Arial", 14));
+                    emailLbl.setFont(Font.font("Arial", 14));
+
+                    idLbl.setTextFill(Color.BLACK);
+                    nameLbl.setTextFill(Color.BLACK);
+                    contactLbl.setTextFill(Color.BLACK);
+                    emailLbl.setTextFill(Color.BLACK);
+
+                    card.getChildren().addAll(idLbl, nameLbl, contactLbl, emailLbl);
+                    userList.getChildren().add(card);
+                }
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    });
+}
+
 private static void handleManageLocations(Stage stage) {
     stage.setTitle("Luggage Locker Booking System - Location Management");
     Image locationBG = new Image(AppFX.class.getResourceAsStream("locationMenu.jpg"));
@@ -569,7 +734,7 @@ private static void handleManageLockers(){
 
 private static void handleManageLockerLocations(){
 
-}
+    }
 
 private static void handleBooking(){
 
