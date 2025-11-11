@@ -6,7 +6,7 @@ public class LockerTypeDAO{
 
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/luggage_locker_db";
     private static final String USER = "root";      
-    private static final String PASSWORD = "22757205"; 
+    private static final String PASSWORD = "Raeka.101482";
 
     public static List<LockerType> getAllLockerTypes(){
         List<LockerType> types = new ArrayList<>();

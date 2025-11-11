@@ -20,6 +20,8 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class AppFX extends Application {
 
@@ -126,7 +128,7 @@ public class AppFX extends Application {
                     btn.setOnAction(e -> handleCancellations());
                     break;
                 case "MANAGE PAYMENTS":
-                    btn.setOnAction(e -> handlePaymentReport(primaryStage));
+                    btn.setOnAction(e -> handlePayments(primaryStage));
                     break;
                 case "MANAGE TRANSFERS":
                     btn.setOnAction(e -> handleTransfers(primaryStage));
@@ -745,7 +747,7 @@ private static void handleCancellations(){
 }
 
 
-     private static void handlePaymentReport(Stage stage) {
+     private static void handlePayments(Stage stage) {
         stage.setTitle("Luggage Locker Booking System - Payment and Release Management");
         Image locationBG = new Image(AppFX.class.getResourceAsStream("paymentMenu.jpg"));
         ImageView backgroundView = new ImageView(locationBG);
@@ -790,29 +792,16 @@ private static void handleCancellations(){
 
             switch (labels[i]) {
                 case "VIEW ALL PAYMENT":
-                    btn.setOnAction(e -> {
-                        // Opens the table-based Payment Viewer window
-                        PaymentViewer viewer = new PaymentViewer();
-                        try {
-                            viewer.start(new Stage());
-                        } catch (Exception ex) {
-                            ex.printStackTrace();
-                        }
-                    });
+                    btn.setOnAction(e -> viewAllPayments(stage));
                     break;
-
                 case "RELEASE LOCKER (PROCESS PAYMENT)":
                     btn.setOnAction(e -> {
                         // TODO: open your payment processing / locker release form
                         System.out.println("-> Action: Process Payment and Release Locker");
                     });
                     break;
-
                 case "SEARCH PAYMENT BY ID":
-                    btn.setOnAction(e -> {
-                        // TODO: open your Search Payment by ID window
-                        System.out.println("-> Action: Search Payment by ID");
-                    });
+                    btn.setOnAction(e ->   searchPayment(stage));
                     break;
 
                 case "RETURN TO MAIN MENU":
@@ -826,7 +815,269 @@ private static void handleCancellations(){
         return menu;
     }
 
-private static void handleTransfers(Stage stage) {
+    private static void viewAllPayments(Stage stage) {
+        // --- Background setup ---
+        Image backgroundImage = new Image(AppFX.class.getResourceAsStream("viewPayments.jpg"));
+        ImageView backgroundView = new ImageView(backgroundImage);
+        backgroundView.setPreserveRatio(false);
+
+        StackPane root = new StackPane();
+        double INITIAL_WIDTH = 1300;
+        double INITIAL_HEIGHT = 700;
+        Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+
+        backgroundView.fitWidthProperty().bind(scene.widthProperty());
+        backgroundView.fitHeightProperty().bind(scene.heightProperty());
+        root.getChildren().add(backgroundView);
+
+        // --- Scrollable payment list setup ---
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setFitToWidth(true);
+        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        scrollPane.setPrefViewportHeight(500);
+
+        VBox paymentList = new VBox(15);
+        paymentList.setPadding(new Insets(10));
+        paymentList.setAlignment(Pos.TOP_CENTER);
+
+        // --- Load payments from DB ---
+        PaymentDAO paymentDAO = new PaymentDAO();
+        List<Payment> payments = new ArrayList<>();
+
+        try {
+            payments = paymentDAO.getAllPayments();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        if (payments.isEmpty()) {
+            Label noPayment = new Label("No payments found in the database.");
+            noPayment.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+            noPayment.setTextFill(Color.WHITE);
+            paymentList.getChildren().add(noPayment);
+        } else {
+            for (Payment payment : payments) {
+                VBox card = new VBox(5);
+                card.setPadding(new Insets(15));
+                card.setPrefWidth(900);
+                card.setStyle(
+                        "-fx-background-color: rgba(255,255,255,0.85); " +
+                                "-fx-background-radius: 12; " +
+                                "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.25), 10, 0, 0, 5);"
+                );
+
+                Label id = new Label("Payment ID: " + payment.getPaymentID());
+                Label bookingRef = new Label("Booking Reference: " + payment.getBookingReference());
+                Label userId = new Label("User ID: " + payment.getUserID());
+                Label amount = new Label("Amount: $" + payment.getPaymentAmount());
+                Label method = new Label("Method: " + payment.getPaymentMethod());
+                Label status = new Label("Status: " + payment.getPaymentStatus());
+                Label date = new Label("Date: " + payment.getPaymentDate());
+
+                id.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+                bookingRef.setFont(Font.font("Arial", 14));
+                userId.setFont(Font.font("Arial", 14));
+                amount.setFont(Font.font("Arial", 14));
+                method.setFont(Font.font("Arial", 14));
+                status.setFont(Font.font("Arial", 14));
+                date.setFont(Font.font("Arial", 14));
+
+                id.setTextFill(Color.BLACK);
+                bookingRef.setTextFill(Color.BLACK);
+                userId.setTextFill(Color.BLACK);
+                amount.setTextFill(Color.BLACK);
+                method.setTextFill(Color.BLACK);
+                status.setTextFill(Color.BLACK);
+                date.setTextFill(Color.BLACK);
+
+                card.getChildren().addAll(id, bookingRef, userId, amount, method, status, date);
+                paymentList.getChildren().add(card);
+            }
+        }
+
+        scrollPane.setContent(paymentList);
+
+        // --- Back Button ---
+        Button backBtn = new Button("Back to Payment Menu");
+        backBtn.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        backBtn.setPrefWidth(180);
+        backBtn.setPrefHeight(40);
+        backBtn.setStyle("-fx-background-color: #003366; -fx-text-fill: white; -fx-background-radius: 8;");
+        backBtn.setOnAction(e -> handlePayments(stage));
+
+        // --- Layout positioning ---
+        VBox content = new VBox(30, scrollPane, backBtn);
+        content.setAlignment(Pos.TOP_CENTER);
+        content.setPadding(new Insets(230, 20, 40, 20));
+
+        root.getChildren().add(content);
+        StackPane.setAlignment(content, Pos.TOP_CENTER);
+
+        stage.setScene(scene);
+        stage.setTitle("View All Payments");
+        stage.show();
+    }
+
+    // Payment and Release of Locker
+    private void releaseLockerAndProcessPayment(String bookingReference){
+    }
+
+    // Search Payments
+    private static void searchPayment(Stage stage) {
+        Image backgroundImage = new Image(AppFX.class.getResourceAsStream("searchPayment.jpg"));
+        ImageView backgroundView = new ImageView(backgroundImage);
+        backgroundView.setPreserveRatio(false);
+
+        StackPane root = new StackPane();
+        double INITIAL_WIDTH = 1300;
+        double INITIAL_HEIGHT = 700;
+        Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+
+        backgroundView.fitWidthProperty().bind(scene.widthProperty());
+        backgroundView.fitHeightProperty().bind(scene.heightProperty());
+        root.getChildren().add(backgroundView);
+
+        Label idLabel = new Label("Search by Payment ID:");
+        idLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+        idLabel.setTextFill(Color.WHITE);
+
+        TextField idField = new TextField();
+        idField.setPromptText("Enter payment ID");
+        idField.setPrefWidth(300);
+        idField.setMaxWidth(300);
+        idField.setStyle("-fx-pref-height: 50px; -fx-font-size: 20px;");
+
+        Button searchBtn = new Button("Search");
+        searchBtn.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        searchBtn.setStyle("-fx-background-color: #003366; -fx-text-fill: white; -fx-background-radius: 8;");
+        searchBtn.setPrefWidth(150);
+        searchBtn.setPrefHeight(40);
+
+        VBox searchBox = new VBox(10, idLabel, idField, searchBtn);
+        searchBox.setAlignment(Pos.TOP_LEFT);
+        searchBox.setPadding(new Insets(200, 0, 0, 120));
+
+        VBox paymentList = new VBox(15);
+        paymentList.setPadding(new Insets(10));
+        paymentList.setAlignment(Pos.TOP_CENTER);
+
+        ScrollPane scrollPane = new ScrollPane(paymentList);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        scrollPane.setPrefViewportWidth(600);
+        scrollPane.setPrefViewportHeight(500);
+
+        VBox scrollContainer = new VBox(scrollPane);
+        scrollContainer.setAlignment(Pos.TOP_RIGHT);
+        scrollContainer.setPadding(new Insets(150, 0, 0, 100));
+
+        Button backBtn = new Button("Back to Payment Menu");
+        backBtn.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        backBtn.setPrefWidth(200);
+        backBtn.setPrefHeight(40);
+        backBtn.setStyle("-fx-background-color: #003366; -fx-text-fill: white; -fx-background-radius: 8;");
+        backBtn.setOnAction(e -> handlePayments(stage));
+
+        HBox mainArea = new HBox(50, searchBox, scrollContainer);
+        mainArea.setAlignment(Pos.TOP_LEFT);
+        mainArea.setPadding(new Insets(50, 20, 0, 80));
+
+        HBox backContainer = new HBox(backBtn);
+        backContainer.setAlignment(Pos.CENTER_RIGHT);
+        backContainer.setPadding(new Insets(20, 50, 0, 0));
+
+        VBox rootContent = new VBox(30, mainArea, backContainer);
+        rootContent.setAlignment(Pos.TOP_LEFT);
+        rootContent.setPadding(new Insets(50, 20, 40, 20));
+
+        root.getChildren().add(rootContent);
+        StackPane.setAlignment(rootContent, Pos.TOP_CENTER);
+
+        stage.setScene(scene);
+        stage.setTitle("Search Payment");
+        stage.show();
+
+        // --- Search Button Action ---
+        searchBtn.setOnAction(e -> {
+            paymentList.getChildren().clear(); // clear previous results
+            PaymentDAO paymentDAO = new PaymentDAO();
+            List<Payment> results = new ArrayList<>();
+
+            String idQuery = idField.getText().trim();
+
+            try {
+                if (!idQuery.isEmpty()) {
+                    try {
+                        int paymentID = Integer.parseInt(idQuery);
+                        Payment payment = paymentDAO.getPaymentById(paymentID);
+                        if (payment != null) results.add(payment);
+                    } catch (NumberFormatException ex) {
+                        Label invalid = new Label("Invalid Payment ID format. Please enter a number.");
+                        invalid.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+                        invalid.setTextFill(Color.RED);
+                        paymentList.getChildren().add(invalid);
+                        return;
+                    }
+                }
+
+                if (results.isEmpty()) {
+                    Label noResult = new Label("No payment found with the given ID.");
+                    noResult.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+                    noResult.setTextFill(Color.BLACK);
+                    noResult.setPadding(new Insets(220, 0, 0, 220));
+                    paymentList.getChildren().add(noResult);
+                } else {
+                    for (Payment payment : results) {
+                        VBox card = new VBox(5);
+                        card.setPadding(new Insets(15));
+                        card.setPrefWidth(900);
+                        card.setStyle(
+                                "-fx-background-color: rgba(255,255,255,0.85); " +
+                                        "-fx-background-radius: 12; " +
+                                        "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.25), 10, 0, 0, 5);"
+                        );
+
+                        // Convert Timestamp to LocalDateTime for formatting
+                        LocalDateTime dateTime = payment.getPaymentDate().toLocalDateTime();
+
+                        Label idLbl = new Label("Payment ID: " + payment.getPaymentID());
+                        Label bookingRefLbl = new Label("Booking Reference: " + payment.getBookingReference());
+                        Label userIDLbl = new Label("User ID: " + payment.getUserID());
+                        Label amountLbl = new Label("Amount: $" + String.format("%.2f", payment.getPaymentAmount()));
+                        Label methodLbl = new Label("Payment Method: " + payment.getPaymentMethod());
+                        Label statusLbl = new Label("Status: " + payment.getPaymentStatus());
+                        Label dateLbl = new Label("Date: " +
+                                dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+
+                        idLbl.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+                        bookingRefLbl.setFont(Font.font("Arial", 14));
+                        userIDLbl.setFont(Font.font("Arial", 14));
+                        amountLbl.setFont(Font.font("Arial", 14));
+                        methodLbl.setFont(Font.font("Arial", 14));
+                        statusLbl.setFont(Font.font("Arial", 14));
+                        dateLbl.setFont(Font.font("Arial", 14));
+
+                        idLbl.setTextFill(Color.BLACK);
+                        bookingRefLbl.setTextFill(Color.BLACK);
+                        userIDLbl.setTextFill(Color.BLACK);
+                        amountLbl.setTextFill(Color.BLACK);
+                        methodLbl.setTextFill(Color.BLACK);
+                        statusLbl.setTextFill(Color.BLACK);
+                        dateLbl.setTextFill(Color.BLACK);
+
+                        card.getChildren().addAll(idLbl, bookingRefLbl, userIDLbl, amountLbl, methodLbl, statusLbl, dateLbl);
+                        paymentList.getChildren().add(card);
+                    }
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+    }
+
+
+
+    private static void handleTransfers(Stage stage) {
     stage.setTitle("Luggage Locker Booking System - Locker Transfer Management");
     Image bg = new Image(AppFX.class.getResourceAsStream("lockerTransferMenu.jpg"));
     ImageView backgroundView = new ImageView(bg);
