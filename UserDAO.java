@@ -113,4 +113,24 @@ public int addUser(User user) {
         }
         return users;
     }
+
+// --- UPDATE user ---
+public boolean updateUser(User user) {
+    String sql = "UPDATE User SET firstName=?, lastName=?, userContact=?, userEmail=? WHERE userID=?";
+    try (Connection conn = getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+        stmt.setString(1, user.getFirstName());
+        stmt.setString(2, user.getLastName());
+        stmt.setString(3, user.getUserContact());
+        stmt.setString(4, user.getUserEmail());
+        stmt.setInt(5, user.getUserID());
+
+        return stmt.executeUpdate() > 0;
+    } catch (SQLException e) {
+        e.printStackTrace();
+        return false;
+    }
+}
+    
 }

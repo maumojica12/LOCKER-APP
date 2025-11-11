@@ -49,6 +49,22 @@ public class User {
         return userEmail;
     }
 
+    public void setFirstName(String firstName) {
+    this.firstName = firstName;
+}
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public void setUserContact(String userContact) {
+        this.userContact = userContact;
+    }
+
+    public void setUserEmail(String userEmail) {
+        this.userEmail = userEmail;
+    }
+
     @Override
     public String toString() {
         return "User ID: " + userID +

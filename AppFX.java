@@ -1,6 +1,6 @@
 import java.util.ArrayList;
 import java.util.List;
-
+import javafx.scene.layout.BorderPane;
 import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -201,7 +201,7 @@ private static VBox userMenuButton(String[] labels, int start, int end, Stage st
                     btn.setOnAction(e -> searchUser(stage));
                     break;
                 case "UPDATE USER":
-                    btn.setOnAction(e -> System.out.println("-> Action: Show Update User Form"));
+                    btn.setOnAction(e -> updateUser(stage));
                     break;
                 case "DELETE USER":
                     btn.setOnAction(e -> System.out.println("-> Action: Show Delete Confirmation"));
@@ -608,6 +608,189 @@ StackPane.setAlignment(rootContent, Pos.TOP_CENTER);
             ex.printStackTrace();
         }
     });
+}
+
+private static void updateUser(Stage stage) {
+    // --- Background setup ---
+    Image backgroundImage = new Image(AppFX.class.getResourceAsStream("updateUser.jpg"));
+    ImageView backgroundView = new ImageView(backgroundImage);
+    backgroundView.setMouseTransparent(true);
+    backgroundView.setPickOnBounds(false);
+    backgroundView.setPreserveRatio(false);
+
+    StackPane root = new StackPane();
+    root.getChildren().add(backgroundView);
+
+    // --- Common constants ---
+    double FIELD_WIDTH = 330;
+    double FIELD_HEIGHT = 40;
+
+    // --- DAO + current user holder ---
+    UserDAO userDAO = new UserDAO();
+    User[] currentUser = new User[1];
+
+    // --- LEFT SIDE: ID input + fetch + messages ---
+    TextField userIDField = new TextField();
+    userIDField.setPromptText("Enter User ID");  
+    userIDField.setPrefSize(FIELD_WIDTH, FIELD_HEIGHT);
+
+    Button fetchBtn = new Button("Fetch User");
+    fetchBtn.setPrefSize(120, FIELD_HEIGHT);
+
+    Label errorLabel = new Label();
+    errorLabel.setStyle("-fx-text-fill: yellow; -fx-font-size: 16px; -fx-font-weight: bold;");
+    errorLabel.setWrapText(true);
+
+    Label userInfoLabel = new Label();
+    userInfoLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;");
+    userInfoLabel.setWrapText(true);
+
+    VBox leftBox = new VBox(15, userIDField, fetchBtn, errorLabel, userInfoLabel);
+    leftBox.setPadding(new Insets(100, 400, 0, 0)); // top, right, bottom, left
+    leftBox.setAlignment(Pos.TOP_LEFT);
+
+    // --- RIGHT SIDE: update fields + back button ---
+    TextField firstNameField = new TextField();
+    firstNameField.setPromptText("Update First Name");
+    firstNameField.setPrefSize(400, FIELD_HEIGHT);
+  
+    TextField lastNameField = new TextField();
+    lastNameField.setPromptText("Update Last Name");
+    lastNameField.setPrefSize(400, FIELD_HEIGHT);
+
+    TextField contactField = new TextField();
+    contactField.setPromptText("Update Contact");
+    contactField.setPrefSize(400, FIELD_HEIGHT);
+
+    TextField emailField = new TextField();
+    emailField.setPromptText("Update Email");
+    emailField.setPrefSize(400, FIELD_HEIGHT);
+
+    Button updateBtn = new Button("Update User");
+    updateBtn.setPrefSize(200, FIELD_HEIGHT);
+
+    Button backBtn = new Button("Back to User Menu");
+    backBtn.setPrefSize(200, 50);
+
+    // --- Right Pane ---
+    BorderPane rightPane = new BorderPane();
+    rightPane.setPadding(new Insets(50, 30, 50, 20)); // overall rightPane padding
+
+    // Update fields + button
+    VBox updateBox = new VBox(15, firstNameField, lastNameField, contactField, emailField, updateBtn);
+    updateBox.setVisible(false);
+    updateBox.setAlignment(Pos.TOP_LEFT);
+
+    // Move slightly down and left using translate
+    updateBox.setTranslateX(-250);  // moves left 20px
+    updateBox.setTranslateY(170);   // moves down 50px
+
+    rightPane.setTop(updateBox);
+
+    // Back button at bottom
+    VBox backBox = new VBox(backBtn);
+    backBox.setAlignment(Pos.CENTER);
+    rightPane.setBottom(backBox);
+
+    // --- Main container ---
+    HBox mainBox = new HBox(50, leftBox,rightPane); // 50px spacing between left/right
+    mainBox.setAlignment(Pos.CENTER);
+    root.getChildren().add(mainBox);
+
+    // --- Scene setup ---
+    Scene scene = new Scene(root, 1300, 700);
+    backgroundView.fitWidthProperty().bind(scene.widthProperty());
+    backgroundView.fitHeightProperty().bind(scene.heightProperty());
+
+    stage.setScene(scene);
+    stage.setTitle("Update User");
+    stage.show();
+
+    // --- Fetch Button Logic ---
+    fetchBtn.setOnAction(e -> {
+        errorLabel.setText("");
+        userInfoLabel.setText("");
+
+        String input = userIDField.getText().trim();
+        if (input.isEmpty()) {
+            errorLabel.setText("Please enter a User ID!");
+            return;
+        }
+
+        try {
+            int id = Integer.parseInt(input);
+            User user = userDAO.getUserById(id);
+
+            if (user != null) {
+                currentUser[0] = user;
+
+                userInfoLabel.setText(
+                        "User ID: " + user.getUserID() + "\n" +
+                        "Username: " + user.getFirstName() + " " + user.getLastName() + "\n" +
+                        "Contact: " + (user.getUserContact() != null ? user.getUserContact() : "N/A") + "\n" +
+                        "Email: " + (user.getUserEmail() != null ? user.getUserEmail() : "N/A")
+                );
+
+                // Prefill & show update fields
+                firstNameField.setText(user.getFirstName());
+                lastNameField.setText(user.getLastName());
+                contactField.setText(user.getUserContact());
+                emailField.setText(user.getUserEmail());
+
+                updateBox.setVisible(true);
+
+            } else {
+                errorLabel.setText("No user found with ID " + id + ".");
+                updateBox.setVisible(false);
+            }
+
+        } catch (NumberFormatException ex) {
+            errorLabel.setText("Invalid User ID format!");
+            updateBox.setVisible(false);
+        }
+    });
+
+    // --- Update Button Logic ---
+updateBtn.setOnAction(e -> {
+    if (currentUser[0] == null) {
+        errorLabel.setText("Fetch a user first before updating.");
+        return;
+    }
+
+    String newFirstName = firstNameField.getText().trim();
+    String newLastName = lastNameField.getText().trim();
+    String newContact = contactField.getText().trim();
+    String newEmail = emailField.getText().trim();
+
+    // --- Validation: first and last name cannot be empty ---
+    if (newFirstName.isEmpty() || newLastName.isEmpty()) {
+        errorLabel.setText("First Name and Last Name cannot be empty!");
+        return;
+    }
+
+    // Update user object
+    currentUser[0].setFirstName(newFirstName);
+    currentUser[0].setLastName(newLastName);
+    currentUser[0].setUserContact(newContact);
+    currentUser[0].setUserEmail(newEmail);
+
+    boolean success = userDAO.updateUser(currentUser[0]);
+    if (success) {
+        userInfoLabel.setText(
+                "User updated successfully!\n" +
+                "User ID: " + currentUser[0].getUserID() + "\n" +
+                "Username: " + currentUser[0].getFirstName() + " " + currentUser[0].getLastName() + "\n" +
+                "Contact: " + currentUser[0].getUserContact() + "\n" +
+                "Email: " + currentUser[0].getUserEmail()
+        );
+        errorLabel.setText("");
+    } else {
+        errorLabel.setText("Update failed. Try again.");
+    }
+});
+
+    // --- Back Button ---
+    backBtn.setOnAction(e -> handleManageUsers(stage));
 }
 
 private static void handleManageLocations(Stage stage) {
