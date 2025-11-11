@@ -673,15 +673,12 @@ private static VBox locationMenuButton(String[] labels, int start, int end, Stag
 }
 
 private static void handleManageLockerTypes(Stage stage) {
-    stage.setTitle("Luggage Locker Booking System - Locker Type Management");    
+    stage.setTitle("Luggage Locker Booking System - Locker Type Management");
     Image bg = new Image(AppFX.class.getResourceAsStream("lockerTypeMenu.jpg"));
     ImageView backgroundView = new ImageView(bg);
+    backgroundView.setPreserveRatio(false);
 
-    String[] menuLabels = {
-        "VIEW ALL LOCKER TYPES",
-        "SEARCH LOCKER TYPE",
-        "RETURN TO MAIN MENU"
-    };
+    String[] menuLabels = { "VIEW ALL LOCKER TYPES", "SEARCH LOCKER TYPE", "RETURN TO MAIN MENU" };
 
     VBox leftMenu = lockerTypeMenuButton(menuLabels, 0, 2, stage);
     VBox rightMenu = lockerTypeMenuButton(menuLabels, 2, 3, stage);
@@ -694,19 +691,18 @@ private static void handleManageLockerTypes(Stage stage) {
     Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
     backgroundView.fitWidthProperty().bind(scene.widthProperty());
     backgroundView.fitHeightProperty().bind(scene.heightProperty());
-    backgroundView.setPreserveRatio(false);
 
     stage.setScene(scene);
     stage.show();
 }
 
-private static VBox lockerTypeMenuButton(String[] labels, int start, int end, Stage stage){
+private static VBox lockerTypeMenuButton(String[] labels, int start, int end, Stage stage) {
     VBox menu = new VBox(25);
     menu.setPadding(new Insets(450, 320, 320, 320));
     menu.setMaxWidth(VBox.USE_PREF_SIZE);
 
-    for(int i = start; i < end; i++) {
-        if(i >= labels.length) break;
+    for (int i = start; i < end; i++) {
+        if (i >= labels.length) break;
         Button btn = new Button(labels[i]);
         btn.setMinWidth(BUTTON_WIDTH);
         btn.setMinHeight(BUTTON_HEIGHT);
@@ -714,12 +710,12 @@ private static VBox lockerTypeMenuButton(String[] labels, int start, int end, St
         btn.setAlignment(Pos.CENTER);
         btn.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
 
-        switch(labels[i]){
+        switch (labels[i]) {
             case "VIEW ALL LOCKER TYPES":
-                btn.setOnAction(e -> System.out.println("-> Action: Display All Locker Types Table"));
+                btn.setOnAction(e -> viewAllLockerTypes(stage));
                 break;
             case "SEARCH LOCKER TYPE":
-                btn.setOnAction(e -> System.out.println("-> Action: Search Locker Type by ID/Size"));
+                btn.setOnAction(e -> searchLockerType(stage));
                 break;
             case "RETURN TO MAIN MENU":
                 btn.setOnAction(e -> new AppFX().start(stage));
@@ -728,6 +724,161 @@ private static VBox lockerTypeMenuButton(String[] labels, int start, int end, St
         menu.getChildren().add(btn);
     }
     return menu;
+}
+
+private static void viewAllLockerTypes(Stage stage) {
+    stage.setTitle("View All Locker Types");
+
+    Image bg = new Image(AppFX.class.getResourceAsStream("lockerTypeMenu.jpg"));
+    ImageView backgroundView = new ImageView(bg);
+    backgroundView.setPreserveRatio(false);
+
+    StackPane root = new StackPane();
+    root.getChildren().add(backgroundView);
+
+    ScrollPane scrollPane = new ScrollPane();
+    scrollPane.setFitToWidth(true);
+    VBox lockerList = new VBox(15);
+    lockerList.setPadding(new Insets(10));
+    lockerList.setAlignment(Pos.TOP_CENTER);
+
+    LockerTypeDAO dao = new LockerTypeDAO(); // create instance
+    List<LockerType> types = dao.getAllLockerTypes(); // call non-static method
+
+    if (types.isEmpty()) {
+        Label noLocker = new Label("No locker types found.");
+        lockerList.getChildren().add(noLocker);
+    } else {
+        for (LockerType type : types) {
+            VBox card = new VBox(5);
+            card.setPadding(new Insets(15));
+            card.setPrefWidth(900);
+            card.setStyle(
+                    "-fx-background-color: rgba(255,255,255,0.85); " +
+                    "-fx-background-radius: 12; " +
+                    "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.25), 10, 0, 0, 5);"
+            );
+
+            Label idLbl = new Label("Locker Type ID: " + type.getLockerTypeID());
+            Label sizeLbl = new Label("Size: " + type.getLockerTypeSize());
+            Label maxWeightLbl = new Label("Max Weight: " + type.getLockerMaxWeight());
+            Label rateLbl = new Label("Rate: ₱" + type.getLockerRate());
+
+            idLbl.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+            sizeLbl.setFont(Font.font("Arial", 14));
+            maxWeightLbl.setFont(Font.font("Arial", 14));
+            rateLbl.setFont(Font.font("Arial", 14));
+
+            card.getChildren().addAll(idLbl, sizeLbl, maxWeightLbl, rateLbl);
+            lockerList.getChildren().add(card);
+        }
+    }
+
+    scrollPane.setContent(lockerList);
+
+    Button backBtn = new Button("Back to Locker Type Menu");
+    backBtn.setPrefWidth(220);
+    backBtn.setPrefHeight(40);
+    backBtn.setStyle("-fx-font-weight: bold; -fx-background-color: #003366; -fx-text-fill: white;");
+    backBtn.setOnAction(e -> handleManageLockerTypes(stage));
+
+    VBox content = new VBox(20, scrollPane, backBtn);
+    content.setAlignment(Pos.TOP_CENTER);
+    content.setPadding(new Insets(150, 20, 40, 20));
+
+    root.getChildren().add(content);
+    StackPane.setAlignment(content, Pos.TOP_CENTER);
+
+    Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+    backgroundView.fitWidthProperty().bind(scene.widthProperty());
+    backgroundView.fitHeightProperty().bind(scene.heightProperty());
+
+    stage.setScene(scene);
+    stage.show();
+}
+
+private static void searchLockerType(Stage stage) {
+    stage.setTitle("Search Locker Type");
+
+    Image bg = new Image(AppFX.class.getResourceAsStream("lockerTypeMenu.jpg"));
+    ImageView backgroundView = new ImageView(bg);
+    backgroundView.setPreserveRatio(false);
+
+    StackPane root = new StackPane();
+    root.getChildren().add(backgroundView);
+
+    Label idLabel = new Label("Locker Type ID:");
+    idLabel.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+    TextField idField = new TextField();
+    idField.setPrefWidth(200);
+
+    Label sizeLabel = new Label("Locker Size:");
+    sizeLabel.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+    TextField sizeField = new TextField();
+    sizeField.setPrefWidth(200);
+
+    Button searchBtn = new Button("Search");
+    searchBtn.setStyle("-fx-font-weight: bold; -fx-background-color: #003366; -fx-text-fill: white;");
+
+    VBox searchBox = new VBox(15, idLabel, idField, sizeLabel, sizeField, searchBtn);
+    searchBox.setAlignment(Pos.TOP_LEFT);
+    searchBox.setPadding(new Insets(150, 0, 0, 120));
+
+    VBox resultList = new VBox(15);
+    resultList.setPadding(new Insets(10));
+
+    ScrollPane scrollPane = new ScrollPane(resultList);
+    scrollPane.setFitToWidth(true);
+    scrollPane.setPrefViewportHeight(500);
+
+    Button backBtn = new Button("Back to Locker Type Menu");
+    backBtn.setPrefWidth(220);
+    backBtn.setPrefHeight(40);
+    backBtn.setStyle("-fx-font-weight: bold; -fx-background-color: #003366; -fx-text-fill: white;");
+    backBtn.setOnAction(e -> handleManageLockerTypes(stage));
+
+    HBox mainArea = new HBox(50, searchBox, scrollPane);
+    mainArea.setPadding(new Insets(50, 20, 0, 80));
+
+    VBox content = new VBox(20, mainArea, backBtn);
+    root.getChildren().add(content);
+
+    Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+    backgroundView.fitWidthProperty().bind(scene.widthProperty());
+    backgroundView.fitHeightProperty().bind(scene.heightProperty());
+
+    stage.setScene(scene);
+    stage.show();
+
+    searchBtn.setOnAction(e -> {
+        resultList.getChildren().clear();
+        LockerTypeDAO dao = new LockerTypeDAO(); // create instance
+        List<LockerType> results = dao.searchLockerTypes(idField.getText().trim(), sizeField.getText().trim());
+
+        if (results.isEmpty()) {
+            Label noResult = new Label("No locker types found.");
+            resultList.getChildren().add(noResult);
+        } else {
+            for (LockerType type : results) {
+                VBox card = new VBox(5);
+                card.setPadding(new Insets(15));
+                card.setPrefWidth(400);
+                card.setStyle(
+                        "-fx-background-color: rgba(255,255,255,0.85); " +
+                        "-fx-background-radius: 12; " +
+                        "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.25), 10, 0, 0, 5);"
+                );
+
+                Label idLbl = new Label("Locker Type ID: " + type.getLockerTypeID());
+                Label sizeLbl = new Label("Size: " + type.getLockerTypeSize());
+                Label maxWeightLbl = new Label("Max Weight: " + type.getLockerMaxWeight());
+                Label rateLbl = new Label("Rate: ₱" + type.getLockerRate());
+
+                card.getChildren().addAll(idLbl, sizeLbl, maxWeightLbl, rateLbl);
+                resultList.getChildren().add(card);
+            }
+        }
+    });
 }
 
 private static void handleManageLockers(){
@@ -1074,8 +1225,6 @@ private static void handleCancellations(){
             }
         });
     }
-
-
 
     private static void handleTransfers(Stage stage) {
     stage.setTitle("Luggage Locker Booking System - Locker Transfer Management");
