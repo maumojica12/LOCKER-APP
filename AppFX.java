@@ -1702,7 +1702,7 @@ private static void handleCancellations(){
 
     private static void performLockerTransfer(Stage stage) {
         stage.setTitle("Perform Locker Transfer");
-        Image bg = new Image(AppFX.class.getResourceAsStream("lockerTransferMenu.jpg"));
+        Image bg = new Image(AppFX.class.getResourceAsStream("lockerTransferBG.jpg"));
         ImageView backgroundView = new ImageView(bg);
         backgroundView.setPreserveRatio(false);
 
@@ -1767,7 +1767,7 @@ private static void handleCancellations(){
 
     private static void viewAllTransfers(Stage stage) {
         stage.setTitle("View All Locker Transfers");
-        Image bg = new Image(AppFX.class.getResourceAsStream("lockerTransferMenu.jpg"));
+        Image bg = new Image(AppFX.class.getResourceAsStream("viewAllTransfers.jpg"));
         ImageView backgroundView = new ImageView(bg);
         backgroundView.setPreserveRatio(false);
 
@@ -1816,7 +1816,7 @@ private static void handleCancellations(){
 
     private static void searchTransferByID(Stage stage) {
         stage.setTitle("Search Transfer by ID");
-        Image bg = new Image(AppFX.class.getResourceAsStream("lockerTransferMenu.jpg"));
+        Image bg = new Image(AppFX.class.getResourceAsStream("searchLockerTransfer.jpg"));
         ImageView backgroundView = new ImageView(bg);
         backgroundView.setPreserveRatio(false);
 
