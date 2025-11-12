@@ -36,7 +36,7 @@ public class Locker {
         return lockerStatus;
     }
 
-    public String setLockerStatus(String lockerStatus){
+    public void setLockerStatus(String lockerStatus){
         this.lockerStatus = lockerStatus;
     }
 
@@ -49,4 +49,3 @@ public class Locker {
                 ", LockerStatus: " + lockerStatus;
     }
 }
-
