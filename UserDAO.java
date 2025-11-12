@@ -5,7 +5,7 @@ import java.util.List;
 public class UserDAO {
     private final String URL = "jdbc:mysql://localhost:3306/luggage_locker_db";
     private final String USER = "root";          // change if you have a different MySQL username
-    private final String PASSWORD = "";          // set your MySQL password if any
+    private final String PASSWORD = "IwillSuccess12:)";          // set your MySQL password if any
 
     // --- Utility method for connecting to the database ---
    private Connection getConnection() throws SQLException {
@@ -127,6 +127,21 @@ public boolean updateUser(User user) {
         stmt.setInt(5, user.getUserID());
 
         return stmt.executeUpdate() > 0;
+    } catch (SQLException e) {
+        e.printStackTrace();
+        return false;
+    }
+}
+
+public boolean deleteUserByID(int userID) {
+    String sql = "DELETE FROM User WHERE userID = ?";
+    try (Connection conn = getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+        stmt.setInt(1, userID);
+        int rows = stmt.executeUpdate();
+        return rows > 0; // true if deletion was successful
+
     } catch (SQLException e) {
         e.printStackTrace();
         return false;

@@ -5,13 +5,16 @@ import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -23,6 +26,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import javafx.scene.layout.Region;
 
 public class AppFX extends Application {
 
@@ -204,7 +208,7 @@ private static VBox userMenuButton(String[] labels, int start, int end, Stage st
                     btn.setOnAction(e -> updateUser(stage));
                     break;
                 case "DELETE USER":
-                    btn.setOnAction(e -> System.out.println("-> Action: Show Delete Confirmation"));
+                    btn.setOnAction(e -> deleteUser(stage));
                     break;
                 case "RETURN TO MAIN MENU":
                     btn.setOnAction(e -> {
@@ -791,6 +795,137 @@ updateBtn.setOnAction(e -> {
 
     // --- Back Button ---
     backBtn.setOnAction(e -> handleManageUsers(stage));
+}
+
+private static void deleteUser(Stage stage) {
+    // --- Background setup ---
+    Image backgroundImage = new Image(AppFX.class.getResourceAsStream("deleteUser.jpg"));
+    ImageView backgroundView = new ImageView(backgroundImage);
+    backgroundView.setPreserveRatio(false);
+
+    StackPane root = new StackPane();
+    double INITIAL_WIDTH = 1300;
+    double INITIAL_HEIGHT = 700;
+    Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+
+    backgroundView.fitWidthProperty().bind(scene.widthProperty());
+    backgroundView.fitHeightProperty().bind(scene.heightProperty());
+    root.getChildren().add(backgroundView);
+
+    // --- Scrollable user list setup ---
+    ScrollPane scrollPane = new ScrollPane();
+    scrollPane.setFitToWidth(true);
+    scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+    scrollPane.setPrefViewportHeight(500);
+
+    VBox userList = new VBox(15);
+    userList.setPadding(new Insets(10));
+    userList.setAlignment(Pos.TOP_CENTER);
+
+    // --- Load users from DB ---
+    UserDAO userDAO = new UserDAO();
+    List<User> users = new ArrayList<>();
+
+    try {
+        users = userDAO.searchUsersByName("");
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+    Label messageLabel = new Label("");
+    messageLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+    messageLabel.setTextFill(Color.BLACK);
+
+    if (users.isEmpty()) {
+        Label noUser = new Label("No users found in the database.");
+        noUser.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        noUser.setTextFill(Color.WHITE);
+        userList.getChildren().add(noUser);
+    } else {
+        for (User user : users) {
+            HBox card = new HBox(15);
+            card.setPadding(new Insets(15));
+            card.setPrefWidth(900);
+            card.setAlignment(Pos.CENTER_LEFT);
+            card.setStyle(
+                "-fx-background-color: rgba(255,255,255,0.85); " +
+                "-fx-background-radius: 12; " +
+                "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.25), 10, 0, 0, 5);"
+            );
+
+            // --- User Info ---
+            VBox info = new VBox(5);
+            Label id = new Label("User ID: " + user.getUserID());
+            Label name = new Label("Name: " + user.getFirstName() + " " + user.getLastName());
+            Label contact = new Label("Contact: " + (user.getUserContact() != null ? user.getUserContact() : "N/A"));
+            Label email = new Label("Email: " + (user.getUserEmail() != null ? user.getUserEmail() : "N/A"));
+
+            id.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+            name.setFont(Font.font("Arial", 14));
+            contact.setFont(Font.font("Arial", 14));
+            email.setFont(Font.font("Arial", 14));
+
+            id.setTextFill(Color.BLACK);
+            name.setTextFill(Color.BLACK);
+            contact.setTextFill(Color.BLACK);
+            email.setTextFill(Color.BLACK);
+
+            info.getChildren().addAll(id, name, contact, email);
+
+            // DELETE X ICON
+            Button deleteBtn = new Button("✖");
+            deleteBtn.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+            deleteBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: black;");
+            deleteBtn.setCursor(Cursor.HAND);
+
+            deleteBtn.setOnAction(e -> {
+                Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+                confirm.setTitle("Confirm Deletion");
+                confirm.setHeaderText(null);
+                confirm.setContentText("Are you sure you want to delete " + user.getFirstName() + " " + user.getLastName() + "?");
+
+                confirm.showAndWait().ifPresent(response -> {
+                    if (response == ButtonType.OK) {
+                        boolean success = userDAO.deleteUserByID(user.getUserID());
+                        if (success) {
+                            userList.getChildren().remove(card);
+                            messageLabel.setText("User ID: " + user.getUserID() + "  [ " + user.getFirstName() + " " + user.getLastName() + " ]  Deleted successfully!");
+                        } else {
+                            messageLabel.setText("Failed to delete user.");
+                        }
+                    }
+                });
+            });
+
+            Region spacer = new Region();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+
+            card.getChildren().addAll(info, spacer, deleteBtn);
+            userList.getChildren().add(card);
+        }
+    }
+
+    scrollPane.setContent(userList);
+
+    // --- Back Button ---
+    Button backBtn = new Button("Back to User Menu");
+    backBtn.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+    backBtn.setPrefWidth(180);
+    backBtn.setPrefHeight(40);
+    backBtn.setStyle("-fx-background-color: #003366; -fx-text-fill: white; -fx-background-radius: 8;");
+    backBtn.setOnAction(e -> handleManageUsers(stage));
+
+    // --- Layout positioning ---
+    VBox content = new VBox(20, scrollPane, messageLabel, backBtn);
+    content.setAlignment(Pos.TOP_CENTER);
+    content.setPadding(new Insets(230, 20, 40, 20));
+
+    root.getChildren().add(content);
+    StackPane.setAlignment(content, Pos.TOP_CENTER);
+
+    stage.setScene(scene);
+    stage.setTitle("Delete Users");
+    stage.show();
 }
 
 private static void handleManageLocations(Stage stage) {
