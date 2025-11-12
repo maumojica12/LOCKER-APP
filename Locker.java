@@ -20,6 +20,10 @@ public class Locker {
         return lockerID;
     }
 
+    public void setLockerID(int lockerID){
+        this.lockerID = lockerID;
+    }
+
     public int getLockerTypeID(){
         return lockerTypeID;
     }
