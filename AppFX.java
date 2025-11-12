@@ -1141,7 +1141,7 @@ private static void handleManageLocations(Stage stage) {
     private static void viewAllLockerTypes(Stage stage) {
         stage.setTitle("View All Locker Types");
 
-        Image bg = new Image(AppFX.class.getResourceAsStream("lockerTypeMenu.jpg"));
+        Image bg = new Image(AppFX.class.getResourceAsStream("viewAllLockerTypes.jpg"));
         ImageView backgroundView = new ImageView(bg);
         backgroundView.setPreserveRatio(false);
 
@@ -1154,8 +1154,8 @@ private static void handleManageLocations(Stage stage) {
         lockerList.setPadding(new Insets(10));
         lockerList.setAlignment(Pos.TOP_CENTER);
 
-        LockerTypeDAO dao = new LockerTypeDAO(); // create instance
-        List<LockerType> types = dao.getAllLockerTypes(); // call non-static method
+        LockerTypeDAO dao = new LockerTypeDAO(); 
+        List<LockerType> types = dao.getAllLockerTypes();
 
         if (types.isEmpty()) {
             Label noLocker = new Label("No locker types found.");
@@ -1212,7 +1212,7 @@ private static void handleManageLocations(Stage stage) {
     private static void searchLockerType(Stage stage) {
         stage.setTitle("Search Locker Type");
 
-        Image bg = new Image(AppFX.class.getResourceAsStream("lockerTypeMenu.jpg"));
+        Image bg = new Image(AppFX.class.getResourceAsStream("searchLockerTypes.jpg"));
         ImageView backgroundView = new ImageView(bg);
         backgroundView.setPreserveRatio(false);
 
