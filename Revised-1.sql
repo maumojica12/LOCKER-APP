@@ -35,7 +35,7 @@ CREATE TABLE Locker(
 		lockerTypeID INT NOT NULL,
 		locationID INT NOT NULL,
 		locationPostalCode VARCHAR(10),
-		lockerStatus ENUM('Available','Occupied') DEFAULT 'Available',
+		lockerStatus ENUM('Available','Reserved','Occupied') DEFAULT 'Available',
 		FOREIGN KEY (lockerTypeID) REFERENCES LockerType(lockerTypeID),
 		FOREIGN KEY (locationID) REFERENCES Location(locationID)
 );
@@ -199,7 +199,6 @@ SELECT * FROM User;
 SELECT * FROM LockerType;
 SELECT * FROM Location;
 SELECT * FROM Locker;
-SELECT * FROM Reservation;
 SELECT * FROM Booking;
 SELECT * FROM Payment;
 SELECT * FROM Cancellation;

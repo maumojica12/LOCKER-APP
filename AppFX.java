@@ -1,5 +1,7 @@
 import java.util.ArrayList;
 import java.util.List;
+
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.animation.PauseTransition;
 import javafx.application.Application;
@@ -127,7 +129,7 @@ public class AppFX extends Application {
                     btn.setOnAction(e -> handleManageLocations(primaryStage));
                     break;
                 case "BOOK/MANAGE RESERVATIONS":
-                    btn.setOnAction(e -> handleBooking());
+                    btn.setOnAction(e -> handleBooking(primaryStage));
                     break;
                 case "MANAGE CANCELLATIONS":
                     btn.setOnAction(e -> handleCancellations());
@@ -928,6 +930,8 @@ private static void deleteUser(Stage stage) {
     stage.show();
 }
 
+
+
 private static void handleManageLocations(Stage stage) {
     stage.setTitle("Luggage Locker Booking System - Location Management");
     Image locationBG = new Image(AppFX.class.getResourceAsStream("locationMenu.jpg"));
@@ -1528,8 +1532,301 @@ private static void handleManageLockerLocations(){
 
     }
 
-private static void handleBooking(){
+private static void handleBooking(Stage stage) {
+    stage.setTitle("Luggage Locker Booking System - Reservation/Booking Management");
 
+    // --- Background ---
+    Image userMenuBG = new Image(AppFX.class.getResourceAsStream("bookingMenu.jpg"));
+    ImageView backgroundView = new ImageView(userMenuBG);
+    backgroundView.setPreserveRatio(false);
+
+    // --- Menu Labels ---
+    String[] menuLabels = {
+        "MAKE A RESERVATION",
+        "CHECK-IN CUSTOMER",
+        "RETURN TO MAIN MENU"
+    };
+
+    // --- Single vertical menu ---
+    VBox centerMenu = bookingMenuButton(menuLabels, 0, menuLabels.length, stage);
+    centerMenu.setAlignment(Pos.CENTER); // vertically centered
+    centerMenu.setSpacing(20); // spacing between buttons
+
+    // --- Root layout ---
+    StackPane root = new StackPane();
+    root.getChildren().addAll(backgroundView, centerMenu);
+    StackPane.setAlignment(centerMenu, Pos.CENTER); // center alignment
+
+    // --- Scene setup ---
+    Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+    backgroundView.fitWidthProperty().bind(scene.widthProperty());
+    backgroundView.fitHeightProperty().bind(scene.heightProperty());
+
+    stage.setScene(scene);
+    stage.show();
+}
+
+private static VBox bookingMenuButton(String[] labels, int start, int end, Stage stage) {
+    VBox menu = new VBox(25); 
+    menu.setPadding(new Insets(450, 320, 320, 320)); 
+    menu.setMaxWidth(VBox.USE_PREF_SIZE);
+
+    for (int i = start; i < end; i++) {
+        if (i >= labels.length) break; 
+        
+        String label = labels[i];
+        Button btn = new Button(label);
+
+        btn.setMinWidth(BUTTON_WIDTH); 
+        btn.setMinHeight(BUTTON_HEIGHT); 
+        btn.setMaxWidth(BUTTON_WIDTH); 
+        btn.setAlignment(Pos.CENTER); 
+        btn.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;"); 
+        
+        switch (label) {
+                case "MAKE A RESERVATION":
+                    btn.setOnAction(e -> reservation(stage));
+                    break;
+                case "CHECK-IN CUSTOMER":
+                   // btn.setOnAction(e -> viewAllUser(stage));
+                    break;
+                case "RETURN TO MAIN MENU":
+                    btn.setOnAction(e -> {
+                        new AppFX().start(stage); 
+                    });
+                    break;
+            }
+            menu.getChildren().add(btn);
+        }
+    return menu;
+}
+
+private static void reservation(Stage stage) {
+    // --- DAO instances ---
+    UserDAO userDAO = new UserDAO();
+    LockerDAO lockerDAO = new LockerDAO();
+    LockerTypeDAO lockerTypeDAO = new LockerTypeDAO();
+    BookingDAO bookingDAO = new BookingDAO();
+    BookingService bookingService = new BookingService(userDAO, bookingDAO, lockerDAO);
+
+    // --- Background ---
+    Image backgroundImage = new Image(AppFX.class.getResourceAsStream("reservation.jpg"));
+    ImageView backgroundView = new ImageView(backgroundImage);
+    backgroundView.setPreserveRatio(false);
+    backgroundView.setMouseTransparent(true);
+    backgroundView.setFitWidth(1300);
+    backgroundView.setFitHeight(700);
+
+    AnchorPane root = new AnchorPane();
+    root.getChildren().add(backgroundView);
+
+    double FIELD_WIDTH = 330;
+    double FIELD_HEIGHT = 40;
+    User[] currentUser = new User[1];
+
+    // --- Input fields ---
+    TextField userIDField = new TextField();
+    userIDField.setPromptText("Enter User ID");
+    userIDField.setPrefSize(FIELD_WIDTH, FIELD_HEIGHT);
+
+    Button fetchBtn = new Button("Fetch User");
+    fetchBtn.setPrefSize(120, FIELD_HEIGHT);
+    fetchBtn.setStyle("-fx-background-color: #003366; -fx-text-fill: white; -fx-background-radius: 8;");
+
+    Label errorLabel = new Label();
+    errorLabel.setStyle("-fx-text-fill: yellow; -fx-font-size: 16px; -fx-font-weight: bold;");
+    errorLabel.setWrapText(true);
+
+    Label userInfoLabel = new Label();
+    userInfoLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;");
+    userInfoLabel.setWrapText(true);
+
+    Label successInfoLabel = new Label();
+    successInfoLabel.setStyle("-fx-text-fill: #00FF00; -fx-font-size: 16px; -fx-font-weight: bold;");
+    successInfoLabel.setWrapText(true);
+    successInfoLabel.setVisible(false);
+
+    // --- Left Pane ---
+    AnchorPane leftPane = new AnchorPane();
+    leftPane.setPrefSize(400, 600);
+    leftPane.getChildren().addAll(userIDField, fetchBtn, errorLabel, userInfoLabel, successInfoLabel);
+    AnchorPane.setTopAnchor(userIDField, 20.0);
+    AnchorPane.setLeftAnchor(userIDField, 20.0);
+    AnchorPane.setTopAnchor(fetchBtn, 70.0);
+    AnchorPane.setLeftAnchor(fetchBtn, 20.0);
+    AnchorPane.setTopAnchor(errorLabel, 120.0);
+    AnchorPane.setLeftAnchor(errorLabel, 20.0);
+    AnchorPane.setTopAnchor(userInfoLabel, 160.0);
+    AnchorPane.setLeftAnchor(userInfoLabel, 20.0);
+    AnchorPane.setTopAnchor(successInfoLabel, 300.0);
+    AnchorPane.setLeftAnchor(successInfoLabel, 20.0);
+    leftPane.setLayoutX(10);
+    leftPane.setLayoutY(100);
+
+    // --- Locker Scroll ---
+    ScrollPane lockerScroll = new ScrollPane();
+    lockerScroll.setPrefSize(700, 400);
+    lockerScroll.setLayoutX(550);
+    lockerScroll.setLayoutY(230);
+    lockerScroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+    lockerScroll.setVisible(false);
+
+    // --- Locker Title ---
+    Label lockerTitle = new Label("Select Available Lockers");
+    lockerTitle.setStyle("-fx-text-fill: white; -fx-font-size: 24px; -fx-font-weight: bold;");
+    lockerTitle.setLayoutX(560);
+    lockerTitle.setLayoutY(185);
+    lockerTitle.setVisible(false);
+
+    // --- Back Button ---
+    Button backBtn = new Button("Back to Booking Menu");
+    backBtn.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+    backBtn.setPrefSize(200, 40);
+    backBtn.setStyle("-fx-background-color: #003366; -fx-text-fill: white; -fx-background-radius: 8;");
+    backBtn.setLayoutX(1050);
+    backBtn.setLayoutY(630);
+
+    root.getChildren().addAll(leftPane, lockerScroll, lockerTitle, backBtn);
+
+    Scene scene = new Scene(root, 1300, 700);
+    stage.setScene(scene);
+    stage.setTitle("Make a Reservation");
+    stage.show();
+
+    // --- Fetch Logic ---
+    fetchBtn.setOnAction(e -> {
+        errorLabel.setText("");
+        userInfoLabel.setText("");
+        lockerTitle.setVisible(false);
+        lockerScroll.setVisible(false);
+
+        String input = userIDField.getText().trim();
+        if (input.isEmpty()) {
+            errorLabel.setText("Please enter a User ID!");
+            successInfoLabel.setVisible(false);
+            return;
+        }
+
+        try {
+            int id = Integer.parseInt(input);
+            User user = userDAO.getUserById(id);
+
+            if (user != null) {
+                currentUser[0] = user;
+                userInfoLabel.setText(
+                    "User ID: " + user.getUserID() + "\n" +
+                    "Name: " + user.getFirstName() + " " + user.getLastName() + "\n" +
+                    "Contact: " + (user.getUserContact() != null ? user.getUserContact() : "N/A") + "\n" +
+                    "Email: " + (user.getUserEmail() != null ? user.getUserEmail() : "N/A")
+                );
+
+                lockerTitle.setVisible(true);
+                successInfoLabel.setVisible(false);
+
+                VBox lockerList = new VBox(15);
+                lockerList.setPadding(new Insets(10));
+                lockerList.setAlignment(Pos.TOP_CENTER);
+
+                List<Locker> availableLockers = lockerDAO.getAvailableLocker();
+                if (availableLockers.isEmpty()) {
+                    Label noLocker = new Label("No available lockers at the moment.");
+                    noLocker.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+                    noLocker.setTextFill(Color.WHITE);
+                    noLocker.setLayoutX(800);
+                    noLocker.setLayoutY(350);
+                    root.getChildren().add(noLocker);
+
+                    lockerTitle.setVisible(false);
+                } else {
+                    for (Locker locker : availableLockers) {
+                        HBox card = new HBox(15);
+                        card.setPadding(new Insets(15));
+                        card.setPrefWidth(600);
+                        card.setAlignment(Pos.CENTER_LEFT);
+                        card.setStyle(
+                            "-fx-background-color: rgba(255,255,255,0.85); -fx-background-radius: 12;" +
+                            "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.25), 10,0,0,5);"
+                        );
+
+                        LockerType type = lockerTypeDAO.getLockerTypeByID(locker.getLockerTypeID());
+                        String lockerSize = type != null ? type.getLockerTypeSize() : "N/A";
+
+                        VBox info = new VBox(5);
+                        Label idLabel = new Label("Locker ID: " + locker.getLockerID());
+                        Label typeLabel = new Label("Locker Size: " + lockerSize);
+                        Label location = new Label("Location ID: " + locker.getLocationID());
+                        Label postal = new Label("Postal Code: " + locker.getLocationPostalCode());
+                        idLabel.setTextFill(Color.BLACK);
+                        typeLabel.setTextFill(Color.BLACK);
+                        location.setTextFill(Color.BLACK);
+                        postal.setTextFill(Color.BLACK);
+                        info.getChildren().addAll(idLabel, typeLabel, location, postal);
+
+                        Button checkBtn = new Button("✓");
+                        checkBtn.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+                        checkBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: green;");
+                        checkBtn.setCursor(Cursor.HAND);
+
+                        checkBtn.setOnAction(ev -> {
+                            double fee = 0;
+                            switch (lockerSize.toLowerCase()) {
+                                case "small": fee = 80; break;
+                                case "medium": fee = 120; break;
+                                case "large": fee = 180; break;
+                            }
+
+                            Booking booking = bookingService.makeReservation(
+                                currentUser[0].getUserID(),
+                                locker.getLockerID(),
+                                fee
+                            );
+
+                            if (booking != null) {
+                                card.setStyle("-fx-background-color: rgba(200,255,200,0.85); -fx-background-radius: 12;");
+                                checkBtn.setDisable(true);
+                                String reservationDate = booking.getReservationDate(); 
+                                String formattedDate = reservationDate; 
+                                LocalDateTime dt = LocalDateTime.parse(reservationDate); 
+                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm"); 
+                                formattedDate = dt.format(formatter);
+
+                                successInfoLabel.setText(
+                                    "Reserved Successfully!\n" +
+                                    "Locker ID: " + locker.getLockerID() + "\n" +
+                                    "Locker Size: " + lockerSize + "\n" +
+                                    "Reservation Fee: ₱" + fee + "\n" +
+                                    "Reservation Date: " + formattedDate + "\n" +
+                                    "Booking Status: " + booking.getBookingStatus() + "\n" +
+                                    "Booking Reference: " + booking.getBookingReference()
+                                );
+                                successInfoLabel.setVisible(true);
+                            } else {
+                                successInfoLabel.setVisible(false);
+                            }
+                        });
+
+                        Region spacer = new Region();
+                        HBox.setHgrow(spacer, Priority.ALWAYS);
+                        card.getChildren().addAll(info, spacer, checkBtn);
+                        lockerList.getChildren().add(card);
+                    }
+                }
+
+                lockerScroll.setContent(lockerList);
+                lockerScroll.setVisible(true);
+
+            } else {
+                errorLabel.setText("No user found with ID " + id + ".");
+                successInfoLabel.setVisible(false);
+            }
+
+        } catch (NumberFormatException ex) {
+            errorLabel.setText("Invalid User ID format!");
+            successInfoLabel.setVisible(false);
+        }
+    });
+
+    backBtn.setOnAction(e -> AppFX.handleBooking(stage));
 }
 
 private static void handleCancellations(){

@@ -1,0 +1,149 @@
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class BookingDAO {
+
+    private static final String URL = "jdbc:mysql://127.0.0.1:3306/luggage_locker_db";
+    private static final String USER = "root";
+    private static final String PASSWORD = "IwillSuccess12:)";
+
+    // --- Generate unique booking reference in format BKG-0001 ---
+    public String generateBookingReference() {
+        String lastRef = null;
+        String sql = "SELECT bookingReference FROM Booking ORDER BY bookingReference DESC LIMIT 1";
+
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            if (rs.next()) {
+                lastRef = rs.getString("bookingReference");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        int newNumber = 1; // default if no bookings exist
+        if (lastRef != null) {
+            // Extract number from "BKG-0003" -> 3
+            String numberPart = lastRef.substring(4);
+            try {
+                newNumber = Integer.parseInt(numberPart) + 1;
+            } catch (NumberFormatException e) {
+                newNumber = 1; // fallback
+            }
+        }
+
+        return String.format("BKG-%04d", newNumber);
+    }
+
+    // --- Add new booking ---
+    public boolean addBooking(Booking booking) {
+        String newRef = generateBookingReference();
+        booking.setBookingReference(newRef);
+
+        String sql = "INSERT INTO Booking (bookingReference, userID, lockerID, reservationFee, reservationDate, bookingStatus, checkInTime, checkOutTime) "
+                   + "VALUES (?, ?, ?, ?, NOW(), ?, NULL, NULL)";
+
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, booking.getBookingReference()); // String now
+            ps.setInt(2, booking.getUserID());
+            ps.setInt(3, booking.getLockerID());
+            ps.setDouble(4, booking.getReservationFee());
+            ps.setString(5, booking.getBookingStatus());
+
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // --- Update booking status and times ---
+    public boolean updateBooking(Booking booking) {
+        String sql = "UPDATE Booking SET bookingStatus = ?, checkInTime = ?, checkOutTime = ? WHERE bookingReference = ?";
+
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, booking.getBookingStatus());
+            stmt.setString(2, booking.getCheckInTime());
+            stmt.setString(3, booking.getCheckOutTime());
+            stmt.setString(4, booking.getBookingReference()); // String
+
+            return stmt.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // --- Get booking by reference ---
+    public Booking getBookingByReference(String bookingReference) {
+        String sql = "SELECT * FROM Booking WHERE bookingReference = ?";
+        Booking booking = null;
+
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, bookingReference); // String
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                booking = new Booking(
+                        rs.getString("bookingReference"),
+                        rs.getInt("userID"),
+                        rs.getInt("lockerID"),
+                        rs.getDouble("reservationFee"),
+                        rs.getString("reservationDate"),
+                        rs.getString("bookingStatus"),
+                        rs.getString("checkInTime"),
+                        rs.getString("checkOutTime")
+                );
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return booking;
+    }
+
+    // --- Get all bookings by user ---
+    public List<Booking> getBookingsByUser(int userID) {
+        List<Booking> bookings = new ArrayList<>();
+        String sql = "SELECT * FROM Booking WHERE userID = ?";
+
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, userID);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                Booking booking = new Booking(
+                        rs.getString("bookingReference"),
+                        rs.getInt("userID"),
+                        rs.getInt("lockerID"),
+                        rs.getDouble("reservationFee"),
+                        rs.getString("reservationDate"),
+                        rs.getString("bookingStatus"),
+                        rs.getString("checkInTime"),
+                        rs.getString("checkOutTime")
+                );
+                bookings.add(booking);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return bookings;
+    }
+}
