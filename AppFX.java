@@ -2161,7 +2161,7 @@ private static void handleCancellations(){
             }
         });
     }
-
+    
     private static void handleTransfers(Stage stage) {
         stage.setTitle("Luggage Locker Booking System - Locker Transfer Management");
         Image bg = new Image(AppFX.class.getResourceAsStream("lockerTransferMenu.jpg"));
@@ -2225,42 +2225,109 @@ private static void handleCancellations(){
     }
 
     private static void performLockerTransfer(Stage stage) {
-        stage.setTitle("Perform Locker Transfer");
-        Image bg = new Image(AppFX.class.getResourceAsStream("lockerTransferBG.jpg"));
-        ImageView backgroundView = new ImageView(bg);
+        // --- Background setup ---
+        Image backgroundImage = new Image(AppFX.class.getResourceAsStream("lockerTransferBG.jpg"));
+        ImageView backgroundView = new ImageView(backgroundImage);
         backgroundView.setPreserveRatio(false);
 
-        Label bookingLabel = new Label("Booking Reference:");
-        TextField bookingField = new TextField();
-        Label oldLockerLabel = new Label("Old Locker ID:");
-        TextField oldLockerField = new TextField();
-        Label newLockerLabel = new Label("New Locker ID:");
-        TextField newLockerField = new TextField();
-        Label amountLabel = new Label("Adjustment Amount:");
-        TextField amountField = new TextField();
-
-        Button submitBtn = new Button("Submit Transfer");
-        submitBtn.setStyle("-fx-font-weight: bold; -fx-background-color: #003366; -fx-text-fill: white;");
-        Button backBtn = new Button("Back to Transfer Menu");
-        backBtn.setStyle("-fx-font-weight: bold; -fx-background-color: #003366; -fx-text-fill: white;");
-        backBtn.setOnAction(e -> handleTransfers(stage));
-
-        VBox form = new VBox(15, bookingLabel, bookingField,
-                oldLockerLabel, oldLockerField,
-                newLockerLabel, newLockerField,
-                amountLabel, amountField,
-                submitBtn, backBtn);
-        form.setPadding(new Insets(100, 50, 50, 100));
-
         StackPane root = new StackPane();
-        root.getChildren().addAll(backgroundView, form);
-
+        double INITIAL_WIDTH = 1300;
+        double INITIAL_HEIGHT = 700;
         Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+
         backgroundView.fitWidthProperty().bind(scene.widthProperty());
         backgroundView.fitHeightProperty().bind(scene.heightProperty());
+        root.getChildren().add(backgroundView);
+
+        // --- Form Labels and Fields ---
+        Label bookingLabel = new Label("Booking Reference:");
+        bookingLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+        bookingLabel.setTextFill(Color.BLACK);
+
+        TextField bookingField = new TextField();
+        bookingField.setPromptText("Enter Booking Reference");
+        bookingField.setPrefWidth(300);
+        bookingField.setMaxWidth(300);
+        bookingField.setStyle("-fx-pref-height: 50px; -fx-font-size: 20px;");
+
+        Label oldLockerLabel = new Label("Old Locker ID:");
+        oldLockerLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+        oldLockerLabel.setTextFill(Color.BLACK);
+
+        TextField oldLockerField = new TextField();
+        oldLockerField.setPromptText("Enter Old Locker ID");
+        oldLockerField.setPrefWidth(300);
+        oldLockerField.setMaxWidth(300);
+        oldLockerField.setStyle("-fx-pref-height: 50px; -fx-font-size: 20px;");
+
+        Label newLockerLabel = new Label("New Locker ID:");
+        newLockerLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+        newLockerLabel.setTextFill(Color.BLACK);
+
+        TextField newLockerField = new TextField();
+        newLockerField.setPromptText("Enter New Locker ID");
+        newLockerField.setPrefWidth(300);
+        newLockerField.setMaxWidth(300);
+        newLockerField.setStyle("-fx-pref-height: 50px; -fx-font-size: 20px;");
+
+        Label amountLabel = new Label("Adjustment Amount:");
+        amountLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+        amountLabel.setTextFill(Color.BLACK);
+
+        TextField amountField = new TextField();
+        amountField.setPromptText("Enter Adjustment Amount");
+        amountField.setPrefWidth(300);
+        amountField.setMaxWidth(300);
+        amountField.setStyle("-fx-pref-height: 50px; -fx-font-size: 20px;");
+
+        // --- Buttons ---
+        Button submitBtn = new Button("Submit Transfer");
+        submitBtn.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        submitBtn.setStyle("-fx-background-color: #003366; -fx-text-fill: white; -fx-background-radius: 8;");
+        submitBtn.setPrefWidth(180);
+        submitBtn.setPrefHeight(40);
+
+        Button backBtn = new Button("Back to Transfer Menu");
+        backBtn.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        backBtn.setStyle("-fx-background-color: #003366; -fx-text-fill: white; -fx-background-radius: 8;");
+        backBtn.setPrefWidth(180);
+        backBtn.setPrefHeight(40);
+        backBtn.setOnAction(e -> handleTransfers(stage));
+
+        // --- Form Layout ---
+        VBox fieldsBox = new VBox(15,
+                bookingLabel, bookingField,
+                oldLockerLabel, oldLockerField,
+                newLockerLabel, newLockerField,
+                amountLabel, amountField
+        );
+        fieldsBox.setAlignment(Pos.TOP_LEFT);
+        fieldsBox.setPadding(new Insets(200, 0, 0, 120)); // moved booking reference lower
+
+        // --- Buttons HBox with spacing ---
+        Region spacer = new Region(); // spacer pushes backBtn to the right
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        HBox buttonsBox = new HBox(20, submitBtn, spacer, backBtn);
+        buttonsBox.setAlignment(Pos.CENTER_LEFT);
+        buttonsBox.setPadding(new Insets(30, 50, 0, 120));
+
+        // --- Combine form and buttons ---
+        VBox formContainer = new VBox(fieldsBox, buttonsBox);
+        formContainer.setAlignment(Pos.TOP_LEFT);
+
+        VBox rootContent = new VBox(formContainer);
+        rootContent.setAlignment(Pos.TOP_LEFT);
+        rootContent.setPadding(new Insets(50, 20, 40, 20));
+
+        root.getChildren().add(rootContent);
+        StackPane.setAlignment(rootContent, Pos.TOP_CENTER);
+
         stage.setScene(scene);
+        stage.setTitle("Perform Locker Transfer");
         stage.show();
 
+        // --- Submit Button Action ---
         submitBtn.setOnAction(e -> {
             try {
                 String bookingRef = bookingField.getText().trim();
@@ -2290,106 +2357,238 @@ private static void handleCancellations(){
     }
 
     private static void viewAllTransfers(Stage stage) {
-        stage.setTitle("View All Locker Transfers");
-        Image bg = new Image(AppFX.class.getResourceAsStream("viewAllTransfers.jpg"));
-        ImageView backgroundView = new ImageView(bg);
+        // --- Background setup ---
+        Image backgroundImage = new Image(AppFX.class.getResourceAsStream("viewAllTransfers.jpg"));
+        ImageView backgroundView = new ImageView(backgroundImage);
         backgroundView.setPreserveRatio(false);
 
+        StackPane root = new StackPane();
+        double INITIAL_WIDTH = 1300;
+        double INITIAL_HEIGHT = 700;
+        Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+
+        backgroundView.fitWidthProperty().bind(scene.widthProperty());
+        backgroundView.fitHeightProperty().bind(scene.heightProperty());
+        root.getChildren().add(backgroundView);
+
+        // --- Scrollable transfer list setup ---
         VBox transferList = new VBox(15);
         transferList.setPadding(new Insets(10));
+        transferList.setAlignment(Pos.TOP_CENTER);
 
         List<LockerTransfer> transfers = LockerTransferDAO.getAllTransfers();
+
         if (transfers.isEmpty()) {
-            transferList.getChildren().add(new Label("No transfers found."));
+            Label noTransfers = new Label("No transfers found in the database.");
+            noTransfers.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+            noTransfers.setTextFill(Color.WHITE);
+            transferList.getChildren().add(noTransfers);
         } else {
             for (LockerTransfer t : transfers) {
+                // --- Card container ---
                 VBox card = new VBox(5);
-                card.setPadding(new Insets(10));
-                card.setStyle("-fx-background-color: rgba(255,255,255,0.85); -fx-background-radius: 10;");
-                Label info = new Label("ID: " + t.getTransferID() +
-                        ", Booking: " + t.getBookingReference() +
-                        ", Date: " + t.getTransferDate() +
-                        ", Old Locker: " + t.getOldLockerID() +
-                        ", New Locker: " + t.getNewLockerID() +
-                        ", Adjustment: ₱" + t.getAdjustmentAmount());
-                card.getChildren().add(info);
+                card.setPadding(new Insets(15));
+                card.setPrefWidth(900);
+                card.setStyle(
+                    "-fx-background-color: rgba(255,255,255,0.85); " +
+                    "-fx-background-radius: 12; " +
+                    "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.25), 10, 0, 0, 5);"
+                );
+                card.setAlignment(Pos.CENTER_LEFT);
+
+                // --- Labels ---
+                Label idLbl = new Label("Transfer ID: " + t.getTransferID());
+                Label bookingLbl = new Label("Booking Reference: " + t.getBookingReference());
+                Label dateLbl = new Label("Date: " + t.getTransferDate());
+                Label oldLockerLbl = new Label("Old Locker ID: " + t.getOldLockerID());
+                Label newLockerLbl = new Label("New Locker ID: " + t.getNewLockerID());
+                Label adjLbl = new Label("Adjustment Amount: ₱" + t.getAdjustmentAmount());
+
+                idLbl.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+                bookingLbl.setFont(Font.font("Arial", 14));
+                dateLbl.setFont(Font.font("Arial", 14));
+                oldLockerLbl.setFont(Font.font("Arial", 14));
+                newLockerLbl.setFont(Font.font("Arial", 14));
+                adjLbl.setFont(Font.font("Arial", 14));
+
+                idLbl.setTextFill(Color.BLACK);
+                bookingLbl.setTextFill(Color.BLACK);
+                dateLbl.setTextFill(Color.BLACK);
+                oldLockerLbl.setTextFill(Color.BLACK);
+                newLockerLbl.setTextFill(Color.BLACK);
+                adjLbl.setTextFill(Color.BLACK);
+
+                // --- Consistent label spacing ---
+                VBox.setMargin(idLbl, new Insets(0, 0, 0, 10));
+                VBox.setMargin(bookingLbl, new Insets(0, 0, 0, 10));
+                VBox.setMargin(dateLbl, new Insets(0, 0, 0, 10));
+                VBox.setMargin(oldLockerLbl, new Insets(0, 0, 0, 10));
+                VBox.setMargin(newLockerLbl, new Insets(0, 0, 0, 10));
+                VBox.setMargin(adjLbl, new Insets(0, 0, 0, 10));
+
+                card.getChildren().addAll(idLbl, bookingLbl, dateLbl, oldLockerLbl, newLockerLbl, adjLbl);
                 transferList.getChildren().add(card);
             }
         }
 
         ScrollPane scrollPane = new ScrollPane(transferList);
         scrollPane.setFitToWidth(true);
+        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
         scrollPane.setPrefViewportHeight(500);
 
+        // --- Back Button ---
         Button backBtn = new Button("Back to Transfer Menu");
-        backBtn.setStyle("-fx-font-weight: bold; -fx-background-color: #003366; -fx-text-fill: white;");
+        backBtn.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        backBtn.setPrefWidth(220);
+        backBtn.setPrefHeight(40);
+        backBtn.setStyle("-fx-background-color: #003366; -fx-text-fill: white; -fx-background-radius: 8;");
         backBtn.setOnAction(e -> handleTransfers(stage));
 
-        VBox content = new VBox(20, scrollPane, backBtn);
-        content.setPadding(new Insets(150, 20, 20, 20));
+        // --- Layout positioning ---
+        VBox content = new VBox(30, scrollPane, backBtn);
         content.setAlignment(Pos.TOP_CENTER);
+        content.setPadding(new Insets(230, 20, 40, 20)); // same vertical offset as viewAllLockerTypes()
 
-        StackPane root = new StackPane(backgroundView, content);
+        root.getChildren().add(content);
+        StackPane.setAlignment(content, Pos.TOP_CENTER);
 
-        Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
-        backgroundView.fitWidthProperty().bind(scene.widthProperty());
-        backgroundView.fitHeightProperty().bind(scene.heightProperty());
         stage.setScene(scene);
+        stage.setTitle("View All Locker Transfers");
         stage.show();
     }
 
+
     private static void searchTransferByID(Stage stage) {
-        stage.setTitle("Search Transfer by ID");
-        Image bg = new Image(AppFX.class.getResourceAsStream("searchLockerTransfer.jpg"));
-        ImageView backgroundView = new ImageView(bg);
+        // --- Background setup ---
+        Image backgroundImage = new Image(AppFX.class.getResourceAsStream("searchLockerTransfer.jpg"));
+        ImageView backgroundView = new ImageView(backgroundImage);
         backgroundView.setPreserveRatio(false);
 
-        Label idLabel = new Label("Transfer ID:");
-        TextField idField = new TextField();
-        Button searchBtn = new Button("Search");
-        searchBtn.setStyle("-fx-font-weight: bold; -fx-background-color: #003366; -fx-text-fill: white;");
-        Button backBtn = new Button("Back to Transfer Menu");
-        backBtn.setStyle("-fx-font-weight: bold; -fx-background-color: #003366; -fx-text-fill: white;");
-        backBtn.setOnAction(e -> handleTransfers(stage));
-
-        VBox inputBox = new VBox(15, idLabel, idField, searchBtn, backBtn);
-        inputBox.setPadding(new Insets(150, 50, 50, 150));
-
-        VBox resultBox = new VBox(15);
-        ScrollPane scrollPane = new ScrollPane(resultBox);
-        scrollPane.setFitToWidth(true);
-        scrollPane.setPrefViewportHeight(500);
-
-        HBox mainArea = new HBox(50, inputBox, scrollPane);
-        mainArea.setPadding(new Insets(50, 20, 0, 50));
-
-        StackPane root = new StackPane(backgroundView, mainArea);
+        StackPane root = new StackPane();
+        double INITIAL_WIDTH = 1300;
+        double INITIAL_HEIGHT = 700;
         Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+
         backgroundView.fitWidthProperty().bind(scene.widthProperty());
         backgroundView.fitHeightProperty().bind(scene.heightProperty());
+        root.getChildren().add(backgroundView);
+
+        // --- Search Input Fields ---
+        Label idLabel = new Label("Transfer ID:");
+        idLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+        idLabel.setTextFill(Color.BLACK);
+
+        TextField idField = new TextField();
+        idField.setPromptText("Enter Transfer ID");
+        idField.setPrefWidth(300);
+        idField.setMaxWidth(300);
+        idField.setStyle("-fx-pref-height: 50px; -fx-font-size: 20px;");
+
+        Button searchBtn = new Button("Search");
+        searchBtn.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        searchBtn.setStyle("-fx-background-color: #003366; -fx-text-fill: white; -fx-background-radius: 8;");
+        searchBtn.setPrefWidth(150);
+        searchBtn.setPrefHeight(40);
+
+        VBox searchBox = new VBox(10, idLabel, idField, searchBtn);
+        searchBox.setAlignment(Pos.TOP_LEFT);
+        searchBox.setPadding(new Insets(160, 0, 0, 120));
+
+        // --- Scrollable Results ---
+        VBox resultList = new VBox(15);
+        resultList.setPadding(new Insets(10));
+        resultList.setAlignment(Pos.TOP_CENTER);
+
+        ScrollPane scrollPane = new ScrollPane(resultList);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        scrollPane.setPrefViewportWidth(600);
+        scrollPane.setPrefViewportHeight(500);
+
+        VBox scrollContainer = new VBox(scrollPane);
+        scrollContainer.setAlignment(Pos.TOP_RIGHT);
+        scrollContainer.setPadding(new Insets(150, 0, 0, 100));
+
+        // --- Back Button ---
+        Button backBtn = new Button("Back to Transfer Menu");
+        backBtn.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        backBtn.setPrefWidth(220);
+        backBtn.setPrefHeight(40);
+        backBtn.setStyle("-fx-background-color: #003366; -fx-text-fill: white; -fx-background-radius: 8;");
+        backBtn.setOnAction(e -> handleTransfers(stage));
+
+        HBox mainArea = new HBox(50, searchBox, scrollContainer);
+        mainArea.setAlignment(Pos.TOP_LEFT);
+        mainArea.setPadding(new Insets(50, 20, 0, 80));
+
+        HBox backContainer = new HBox(backBtn);
+        backContainer.setAlignment(Pos.CENTER_RIGHT);
+        backContainer.setPadding(new Insets(20, 50, 0, 0));
+
+        VBox rootContent = new VBox(30, mainArea, backContainer);
+        rootContent.setAlignment(Pos.TOP_LEFT);
+        rootContent.setPadding(new Insets(50, 20, 40, 20));
+        root.getChildren().add(rootContent);
+        StackPane.setAlignment(rootContent, Pos.TOP_CENTER);
 
         stage.setScene(scene);
+        stage.setTitle("Search Transfer by ID");
         stage.show();
 
+        // --- Search Button Action ---
         searchBtn.setOnAction(e -> {
-            resultBox.getChildren().clear();
+            resultList.getChildren().clear();
             try {
                 int id = Integer.parseInt(idField.getText().trim());
                 LockerTransfer transfer = LockerTransferDAO.getTransferByID(id);
+
                 if (transfer == null) {
-                    resultBox.getChildren().add(new Label("No transfer found for ID " + id));
+                    Label noResult = new Label("No transfer found for ID " + id);
+                    noResult.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+                    noResult.setTextFill(Color.BLACK);
+                    noResult.setPadding(new Insets(220, 0, 0, 220));
+                    resultList.getChildren().add(noResult);
                 } else {
                     VBox card = new VBox(5);
-                    card.setPadding(new Insets(10));
-                    card.setStyle("-fx-background-color: rgba(255,255,255,0.85); -fx-background-radius: 10;");
-                    Label info = new Label("ID: " + transfer.getTransferID() +
-                            ", Booking: " + transfer.getBookingReference() +
-                            ", Date: " + transfer.getTransferDate() +
-                            ", Old Locker: " + transfer.getOldLockerID() +
-                            ", New Locker: " + transfer.getNewLockerID() +
-                            ", Adjustment: ₱" + transfer.getAdjustmentAmount());
-                    card.getChildren().add(info);
-                    resultBox.getChildren().add(card);
+                    card.setPadding(new Insets(15));
+                    card.setPrefWidth(900);
+                    card.setStyle(
+                            "-fx-background-color: rgba(255,255,255,0.85); " +
+                            "-fx-background-radius: 12; " +
+                            "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.25), 10, 0, 0, 5);"
+                    );
+                    card.setAlignment(Pos.CENTER_LEFT);
+
+                    Label idLbl = new Label("Transfer ID: " + transfer.getTransferID());
+                    Label bookingLbl = new Label("Booking Reference: " + transfer.getBookingReference());
+                    Label dateLbl = new Label("Date: " + transfer.getTransferDate());
+                    Label oldLockerLbl = new Label("Old Locker ID: " + transfer.getOldLockerID());
+                    Label newLockerLbl = new Label("New Locker ID: " + transfer.getNewLockerID());
+                    Label adjLbl = new Label("Adjustment Amount: ₱" + transfer.getAdjustmentAmount());
+
+                    idLbl.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+                    bookingLbl.setFont(Font.font("Arial", 14));
+                    dateLbl.setFont(Font.font("Arial", 14));
+                    oldLockerLbl.setFont(Font.font("Arial", 14));
+                    newLockerLbl.setFont(Font.font("Arial", 14));
+                    adjLbl.setFont(Font.font("Arial", 14));
+
+                    idLbl.setTextFill(Color.BLACK);
+                    bookingLbl.setTextFill(Color.BLACK);
+                    dateLbl.setTextFill(Color.BLACK);
+                    oldLockerLbl.setTextFill(Color.BLACK);
+                    newLockerLbl.setTextFill(Color.BLACK);
+                    adjLbl.setTextFill(Color.BLACK);
+
+                    VBox.setMargin(idLbl, new Insets(0, 0, 0, 10));
+                    VBox.setMargin(bookingLbl, new Insets(0, 0, 0, 10));
+                    VBox.setMargin(dateLbl, new Insets(0, 0, 0, 10));
+                    VBox.setMargin(oldLockerLbl, new Insets(0, 0, 0, 10));
+                    VBox.setMargin(newLockerLbl, new Insets(0, 0, 0, 10));
+                    VBox.setMargin(adjLbl, new Insets(0, 0, 0, 10));
+
+                    card.getChildren().addAll(idLbl, bookingLbl, dateLbl, oldLockerLbl, newLockerLbl, adjLbl);
+                    resultList.getChildren().add(card);
                 }
             } catch (NumberFormatException ex) {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
