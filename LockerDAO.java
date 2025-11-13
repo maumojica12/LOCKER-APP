@@ -6,7 +6,7 @@ public class LockerDAO {
 
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/luggage_locker_db";
     private static final String USER = "root"; // MySQL username
-    private static final String PASSWORD = ""; // MySQL password
+    private static final String PASSWORD = "IwillSuccess12:)"; // MySQL password
 
     //Get List of All Lockers
     public List<Locker> getAllLockers(){
@@ -35,7 +35,7 @@ public class LockerDAO {
     }
     //Search for Locker by ID
     public Locker getLockerByID(int lockerID){
-        String query = "SELECT * FROM Lock WHERE lockerID = ?";
+        String query = "SELECT * FROM Locker WHERE lockerID = ?";
         Locker locker = null; //if locker is not found
 
         try(Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
