@@ -142,7 +142,7 @@ public class AppFX extends Application {
                     btn.setOnAction(e -> handleTransfers(primaryStage));
                     break;
                 case "GENERATE REPORTS":
-                    btn.setOnAction(e -> handleReports());
+                    btn.setOnAction(e -> handleReports(primaryStage));
                     break;
                 case "EXIT":
                     btn.setOnAction(e -> handleExit(primaryStage));
@@ -2857,9 +2857,82 @@ private static void handleCancellations(){
         });
     }
 
-    private static void handleReports(){
+    private static void handleReports(Stage stage){
+        stage.setTitle("Luggage Locker Booking System - Generate Reports");
 
+        // --- Background ---
+        Image userMenuBG = new Image(AppFX.class.getResourceAsStream("reportMenu.jpg"));
+        ImageView backgroundView = new ImageView(userMenuBG);
+        backgroundView.setPreserveRatio(false);
+
+        // --- Menu Labels ---
+        String[] menuLabels = {
+            "LOCKER OCCUPANCY REPORT",
+            "CANCELED BOOKINGS REPORT",
+            "PAYMENT TRANSACTIONS REPORT",
+            "REVENUE REPORT",
+            "RETURN TO MAIN MENU"
+        };
+
+        // --- Single vertical menu ---
+        VBox centerMenu = reportMenuButton(menuLabels, 0, menuLabels.length, stage);
+        centerMenu.setAlignment(Pos.CENTER); // vertically centered
+        centerMenu.setSpacing(20); // spacing between buttons
+
+        // --- Root layout ---
+        StackPane root = new StackPane();
+        root.getChildren().addAll(backgroundView, centerMenu);
+        StackPane.setAlignment(centerMenu, Pos.CENTER); // center alignment
+
+        // --- Scene setup ---
+        Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+        backgroundView.fitWidthProperty().bind(scene.widthProperty());
+        backgroundView.fitHeightProperty().bind(scene.heightProperty());
+
+        stage.setScene(scene);
+        stage.show();
     }
+
+    private static VBox reportMenuButton(String[] labels, int start, int end, Stage stage) {
+    VBox menu = new VBox(25); 
+    menu.setPadding(new Insets(450, 320, 320, 320)); 
+    menu.setMaxWidth(VBox.USE_PREF_SIZE);
+
+    for (int i = start; i < end; i++) {
+        if (i >= labels.length) break; 
+        
+        String label = labels[i];
+        Button btn = new Button(label);
+
+        btn.setMinWidth(BUTTON_WIDTH); 
+        btn.setMinHeight(BUTTON_HEIGHT); 
+        btn.setMaxWidth(BUTTON_WIDTH); 
+        btn.setAlignment(Pos.CENTER); 
+        btn.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;"); 
+        
+        switch (label) {
+                case "LOCKER OCCUPANCY REPORT":
+                    //btn.setOnAction(e -> reservation(stage));
+                    break;
+                case "CANCELED BOOKINGS REPORT":
+                    //btn.setOnAction(e -> checkIn(stage));
+                    break;
+                case "PAYMENT TRANSACTIONS REPORT":
+                    //btn.setOnAction(e -> viewAllActiveBookings(stage));
+                    break;
+                case "REVENUE REPORT":
+                    //btn.setOnAction(e -> checkOut(stage));
+                    break;
+                case "RETURN TO MAIN MENU":
+                    btn.setOnAction(e -> {
+                        new AppFX().start(stage); 
+                    });
+                    break;
+            }
+            menu.getChildren().add(btn);
+        }
+    return menu;
+}
 
      /**
      * shows it for 5 seconds, and then terminates the application.
