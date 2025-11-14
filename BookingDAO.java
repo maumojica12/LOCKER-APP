@@ -177,4 +177,34 @@ public class BookingDAO {
     return bookings;
 }
 
+public List<Booking> getCheckedInBookings() {
+    List<Booking> bookings = new ArrayList<>();
+    String sql = "SELECT * FROM Booking WHERE bookingStatus = 'Checked-in'";
+
+    try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+        ResultSet rs = stmt.executeQuery();
+
+        while (rs.next()) {
+            Booking booking = new Booking(
+                rs.getString("bookingReference"),
+                rs.getInt("userID"),
+                rs.getInt("lockerID"),
+                rs.getDouble("reservationFee"),
+                rs.getString("reservationDate"),
+                rs.getString("bookingStatus"),
+                rs.getString("checkInTime"),
+                rs.getString("checkOutTime")
+            );
+            bookings.add(booking);
+        }
+
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+
+    return bookings;
+}
+
 }

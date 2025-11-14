@@ -1545,6 +1545,7 @@ private static void handleBooking(Stage stage) {
     String[] menuLabels = {
         "MAKE A RESERVATION",
         "CHECK-IN CUSTOMER",
+        "VIEW ALL ACTIVE BOOKINGS",
         "RETURN TO MAIN MENU"
     };
 
@@ -1590,6 +1591,9 @@ private static VBox bookingMenuButton(String[] labels, int start, int end, Stage
                     break;
                 case "CHECK-IN CUSTOMER":
                     btn.setOnAction(e -> checkIn(stage));
+                    break;
+                case "VIEW ALL ACTIVE BOOKINGS":
+                    btn.setOnAction(e -> viewAllActiveBookings(stage));
                     break;
                 case "RETURN TO MAIN MENU":
                     btn.setOnAction(e -> {
@@ -1961,7 +1965,118 @@ private static void checkIn(Stage stage) {
     // --- Layout positioning ---
     VBox content = new VBox(20, scrollPane, backBtn);
     content.setAlignment(Pos.TOP_CENTER);
-    content.setPadding(new Insets(230, 20, 40, 20));
+    content.setPadding(new Insets(200, 20, 40, 20));
+
+    root.getChildren().add(content);
+    StackPane.setAlignment(content, Pos.TOP_CENTER);
+
+    stage.setScene(scene);
+    stage.setTitle("Check-In Customer");
+    stage.show();
+}
+
+private static void viewAllActiveBookings(Stage stage){
+    // --- Background setup ---
+    Image backgroundImage = new Image(AppFX.class.getResourceAsStream("viewBookings.jpg"));
+    ImageView backgroundView = new ImageView(backgroundImage);
+    backgroundView.setPreserveRatio(false);
+
+    StackPane root = new StackPane();
+    double INITIAL_WIDTH = 1300;
+    double INITIAL_HEIGHT = 700;
+    Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+
+    backgroundView.fitWidthProperty().bind(scene.widthProperty());
+    backgroundView.fitHeightProperty().bind(scene.heightProperty());
+    root.getChildren().add(backgroundView);
+
+    // --- Scrollable booking list setup ---
+    ScrollPane scrollPane = new ScrollPane();
+    scrollPane.setFitToWidth(true);
+    scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+    scrollPane.setPrefViewportHeight(500);
+
+    VBox bookingList = new VBox(15);
+    bookingList.setPadding(new Insets(10));
+    bookingList.setAlignment(Pos.TOP_CENTER);
+
+    // --- DAOs and service ---
+    BookingDAO bookingDAO = new BookingDAO();
+    LockerDAO lockerDAO = new LockerDAO();
+    LockerTypeDAO lockerTypeDAO = new LockerTypeDAO();
+    UserDAO userDAO = new UserDAO();
+    BookingService bookingService = new BookingService(userDAO, bookingDAO, lockerDAO);
+
+    // --- Load all pending bookings ---
+    List<Booking> activeBookings = bookingDAO.getCheckedInBookings();
+
+    if (activeBookings.isEmpty()) {
+        Label noBooking = new Label("No Active Bookings.");
+        noBooking.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        noBooking.setTextFill(Color.WHITE);
+
+        StackPane wrapper = new StackPane(noBooking);
+        wrapper.setPrefWidth(900); 
+        StackPane.setAlignment(noBooking, Pos.TOP_CENTER); 
+        StackPane.setMargin(noBooking, new Insets(120, 0, 0, 0)); 
+
+        bookingList.getChildren().add(wrapper);
+    } else {
+        for (Booking booking : activeBookings) {
+            HBox card = new HBox(15);
+            card.setPadding(new Insets(15));
+            card.setPrefWidth(900);
+            card.setAlignment(Pos.CENTER_LEFT);
+            card.setStyle(
+                "-fx-background-color: rgba(255,255,255,0.85); " +
+                "-fx-background-radius: 12; " +
+                "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.25), 10, 0, 0, 5);"
+            );
+
+            // --- Fetch user and locker info ---
+            User user = userDAO.getUserById(booking.getUserID());
+            Locker locker = lockerDAO.getLockerByID(booking.getLockerID());
+            LockerType lockerType = lockerTypeDAO.getLockerTypeByID(locker.getLockerTypeID());
+            String lockerSize = lockerType != null ? lockerType.getLockerTypeSize() : "Unknown";
+
+           // --- Build info label using TextFlow ---
+            Text bookingRefText = new Text("Booking Reference: " + booking.getBookingReference() + "\n");
+            bookingRefText.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+            bookingRefText.setFill(Color.BLACK);
+
+            Text statusText = new Text(
+                    "Booking Status: " + booking.getBookingStatus() + "\n" +
+                    "Check-In Date: " + booking.getCheckInTime() + "\n" +
+                    "User ID: " + user.getUserID() + "\n" +
+                    "User Name: " + user.getFirstName() + " " + user.getLastName() + "\n" +
+                    "Locker ID: " + locker.getLockerID() + " [" + lockerSize + "]"
+            );
+            statusText.setFont(Font.font("Arial", 14));
+            statusText.setFill(Color.BLACK);
+
+            TextFlow infoFlow = new TextFlow(bookingRefText, statusText);
+            Region spacer = new Region();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+
+            card.getChildren().addAll(infoFlow, spacer);
+            bookingList.getChildren().add(card);
+        }
+    }
+
+    scrollPane.setContent(bookingList);
+
+    // --- Back Button ---
+    Button backBtn = new Button("Back to Booking Menu");
+    backBtn.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+    backBtn.setPrefWidth(200);
+    backBtn.setPrefHeight(40);
+    backBtn.setStyle("-fx-background-color: #003366; -fx-text-fill: white; -fx-background-radius: 8;");
+    backBtn.setOnAction(e -> handleBooking(stage));
+
+    // --- Layout positioning ---
+    VBox content = new VBox(20, scrollPane, backBtn);
+    content.setAlignment(Pos.TOP_CENTER);
+    content.setPadding(new Insets(200, 20, 40, 20));
 
     root.getChildren().add(content);
     StackPane.setAlignment(content, Pos.TOP_CENTER);
