@@ -134,7 +134,6 @@ FROM Payment P JOIN Booking B ON P.bookingReference = B.bookingReference
 				JOIN Locker L ON B.lockerID = L.lockerID
 				JOIN LockerType LT ON L.lockerTypeID = LT.lockerTypeID
 WHERE P.paymentStatus = 'Paid'
-AND MONTH(P.paymentDate) = MONTH(NOW())
 AND YEAR(P.paymentDate) = YEAR(NOW())
 GROUP BY LT.lockerTypeSize
 ORDER BY LT.lockerTypeSize;
@@ -145,11 +144,9 @@ FROM Payment P JOIN Booking B ON P.bookingReference = B.bookingReference
 				JOIN Locker L ON B.lockerID = L.lockerID
 				JOIN Location LOC ON L.locationID = LOC.locationID
 WHERE P.paymentStatus = 'Paid'
-AND MONTH(P.paymentDate) = MONTH(NOW())
 AND YEAR(P.paymentDate) = YEAR(NOW())
 GROUP BY LOC.locationName
 ORDER BY LOC.locationName;
-
 
 -- TEST INPUTS
 -- USER
@@ -203,4 +200,3 @@ SELECT * FROM Booking;
 SELECT * FROM Payment;
 SELECT * FROM Cancellation;
 SELECT * FROM LockerTransfer;
-

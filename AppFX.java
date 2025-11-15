@@ -1,3 +1,5 @@
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.scene.text.Text;
@@ -10,10 +12,6 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
@@ -25,8 +23,8 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import javafx.scene.layout.Region;
@@ -2941,7 +2939,7 @@ private static void handleCancellations(){
                     //btn.setOnAction(e -> viewAllActiveBookings(stage));
                     break;
                 case "REVENUE REPORT":
-                    //btn.setOnAction(e -> checkOut(stage));
+                    btn.setOnAction(e -> revenueReports(stage));
                     break;
                 case "RETURN TO MAIN MENU":
                     btn.setOnAction(e -> {
@@ -2952,6 +2950,309 @@ private static void handleCancellations(){
             menu.getChildren().add(btn);
         }
     return menu;
+}
+
+private static void revenueReports(Stage stage){
+        stage.setTitle("Luggage Locker Booking System - Revenue Reports");
+
+        // --- Background ---
+        Image userMenuBG = new Image(AppFX.class.getResourceAsStream("revenueMenu.jpg"));
+        ImageView backgroundView = new ImageView(userMenuBG);
+        backgroundView.setPreserveRatio(false);
+
+        // --- Menu Labels ---
+        String[] menuLabels = {
+            "GROUPED BY LOCKER SIZE",
+            "GROUPED BY LOCKER LOCATION",
+            "RETURN TO REPORTS MENU"
+        };
+
+        // --- Single vertical menu ---
+        VBox centerMenu = revenueMenuButton(menuLabels, 0, menuLabels.length, stage);
+        centerMenu.setAlignment(Pos.CENTER); // vertically centered
+        centerMenu.setSpacing(20); // spacing between buttons
+
+        // --- Root layout ---
+        StackPane root = new StackPane();
+        root.getChildren().addAll(backgroundView, centerMenu);
+        StackPane.setAlignment(centerMenu, Pos.CENTER); // center alignment
+
+        // --- Scene setup ---
+        Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+        backgroundView.fitWidthProperty().bind(scene.widthProperty());
+        backgroundView.fitHeightProperty().bind(scene.heightProperty());
+
+        stage.setScene(scene);
+        stage.show();
+    }
+
+     private static VBox revenueMenuButton(String[] labels, int start, int end, Stage stage) {
+    VBox menu = new VBox(25); 
+    menu.setPadding(new Insets(450, 320, 320, 320)); 
+    menu.setMaxWidth(VBox.USE_PREF_SIZE);
+
+    for (int i = start; i < end; i++) {
+        if (i >= labels.length) break; 
+        
+        String label = labels[i];
+        Button btn = new Button(label);
+
+        btn.setMinWidth(BUTTON_WIDTH); 
+        btn.setMinHeight(BUTTON_HEIGHT); 
+        btn.setMaxWidth(BUTTON_WIDTH); 
+        btn.setAlignment(Pos.CENTER); 
+        btn.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;"); 
+        
+        switch (label) {
+                case "GROUPED BY LOCKER SIZE":
+                    btn.setOnAction(e -> revReportSize(stage));
+                    break;
+                case "GROUPED BY LOCKER LOCATION":
+                    btn.setOnAction(e -> revReportLocation(stage));
+                    break;
+                case "RETURN TO REPORTS MENU":
+                    btn.setOnAction(e -> handleReports(stage));
+                    break;
+            }
+            menu.getChildren().add(btn);
+        }
+    return menu;
+}
+
+private static void revReportSize(Stage stage) {
+    stage.setTitle("Revenue Reports (Locker Size)");
+
+    // --- Background ---
+    Image userMenuBG = new Image(AppFX.class.getResourceAsStream("revRepSize.jpg"));
+    ImageView backgroundView = new ImageView(userMenuBG);
+    backgroundView.setPreserveRatio(false);
+
+    // --- Root StackPane ---
+    StackPane root = new StackPane();
+    root.getChildren().add(backgroundView);
+    backgroundView.fitWidthProperty().bind(root.widthProperty());
+    backgroundView.fitHeightProperty().bind(root.heightProperty());
+
+    // --- Main BorderPane ---
+    BorderPane mainPane = new BorderPane();
+    root.getChildren().add(mainPane);
+
+    // --- Top: Year selection ---
+    HBox topBox = new HBox(10);
+    topBox.setPadding(new Insets(20));
+    topBox.setAlignment(Pos.CENTER_LEFT);
+
+    Label yearLabel = new Label("Select Year:");
+    yearLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: white;");
+    ComboBox<Integer> yearCombo = new ComboBox<>();
+    for (int y = 2000; y <= 2025; y++) yearCombo.getItems().add(y);
+    yearCombo.setValue(2025);
+    topBox.setPadding(new Insets(200, 20, 20, 100));
+    topBox.getChildren().addAll(yearLabel, yearCombo);
+    mainPane.setTop(topBox);
+
+    // --- Center VBox ---
+    VBox centerBox = new VBox(15);
+    centerBox.setAlignment(Pos.TOP_CENTER);
+    centerBox.setPadding(new Insets(20));
+    mainPane.setCenter(centerBox);
+
+    // --- Bottom: Back Button ---
+    HBox bottomBox = new HBox();
+    bottomBox.setPadding(new Insets(20));
+    bottomBox.setAlignment(Pos.BOTTOM_RIGHT);
+    Button backBtn = new Button("Back");
+    backBtn.setOnAction(e -> revenueReports(stage));
+    bottomBox.getChildren().add(backBtn);
+    mainPane.setBottom(bottomBox);
+
+    RevenueReportDAO dao = new RevenueReportDAO();
+
+    // --- Update report when year changes ---
+yearCombo.setOnAction(e -> {
+    int selectedYear = yearCombo.getValue();
+    centerBox.getChildren().clear();
+
+    List<RevenueReport> revenueList = dao.getRevenueByLockerSize(selectedYear);
+
+    // If no data at all for the year
+    if (revenueList.isEmpty()) {
+        Label noReport = new Label("No Revenue Report for Year " + selectedYear);
+        noReport.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: white;");
+        VBox.setMargin(noReport, new Insets(90, 0, 0, 0)); // 50px from top
+        centerBox.getChildren().add(noReport);
+    } else {
+        Label reportTitle = new Label(selectedYear + " Revenue Report");
+        reportTitle.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: black;");
+        centerBox.getChildren().add(reportTitle);
+
+        TableView<RevenueReport> table = new TableView<>();
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        TableColumn<RevenueReport, String> colCategory = new TableColumn<>("Locker Size");
+        colCategory.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getCategory()));
+
+        TableColumn<RevenueReport, String> colRevenue = new TableColumn<>("Total Revenue");
+        colRevenue.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(
+                data.getValue().getTotalRevenue() >= 0 ?
+                        String.format("%.2f", data.getValue().getTotalRevenue()) : "N/A"));
+
+        table.getColumns().addAll(colCategory, colRevenue);
+
+        colCategory.prefWidthProperty().bind(table.widthProperty().multiply(0.50));
+        colRevenue.prefWidthProperty().bind(table.widthProperty().multiply(0.50));
+
+        // Fixed 3 rows
+        final double ROW_HEIGHT = 30.0;
+        final int NUM_DATA_ROWS = 3;
+        table.setFixedCellSize(ROW_HEIGHT);
+        double tableHeight = (NUM_DATA_ROWS * ROW_HEIGHT) + ROW_HEIGHT + 2;
+        table.setPrefHeight(tableHeight);
+        table.setMaxHeight(tableHeight);
+
+        ObservableList<RevenueReport> tableItems = FXCollections.observableArrayList();
+        String[] sizes = {"Small", "Medium", "Large"};
+        for (String size : sizes) {
+            double revenue = -1; // N/A default
+            for (RevenueReport r : revenueList) {
+                if (r.getCategory().equalsIgnoreCase(size)) {
+                    revenue = r.getTotalRevenue();
+                    break;
+                }
+            }
+            tableItems.add(new RevenueReport(size, revenue));
+        }
+        table.setItems(tableItems);
+
+        // control table width ---
+        StackPane tableWrapper = new StackPane();
+        tableWrapper.setPrefWidth(700);  // Desired table width
+        tableWrapper.setMinWidth(700);
+        tableWrapper.setMaxWidth(700);
+        tableWrapper.getChildren().add(table);
+        tableWrapper.setAlignment(Pos.CENTER);
+        centerBox.setPadding(new Insets(70, 20, 20, 20)); // top padding pushes content down
+
+        centerBox.getChildren().add(tableWrapper);
+    }
+});
+    // --- Trigger default selection ---
+    yearCombo.getOnAction().handle(null);
+
+    Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+    stage.setScene(scene);
+    stage.show();
+}
+
+private static void revReportLocation(Stage stage) {
+        stage.setTitle("Revenue Reports (Locker Location)");
+
+    // --- Background ---
+    Image userMenuBG = new Image(AppFX.class.getResourceAsStream("revRepLoc.jpg"));
+    ImageView backgroundView = new ImageView(userMenuBG);
+    backgroundView.setPreserveRatio(false);
+
+    // --- Root StackPane ---
+    StackPane root = new StackPane();
+    root.getChildren().add(backgroundView);
+    backgroundView.fitWidthProperty().bind(root.widthProperty());
+    backgroundView.fitHeightProperty().bind(root.heightProperty());
+
+    // --- Main BorderPane ---
+    BorderPane mainPane = new BorderPane();
+    root.getChildren().add(mainPane);
+
+    // --- Top: Year selection ---
+    HBox topBox = new HBox(10);
+    topBox.setPadding(new Insets(20));
+    topBox.setAlignment(Pos.CENTER_LEFT);
+
+    Label yearLabel = new Label("Select Year:");
+    yearLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: white;");
+    ComboBox<Integer> yearCombo = new ComboBox<>();
+    for (int y = 2000; y <= 2025; y++) yearCombo.getItems().add(y);
+    yearCombo.setValue(2025);
+    topBox.setPadding(new Insets(200, 20, 20, 100));
+    topBox.getChildren().addAll(yearLabel, yearCombo);
+    mainPane.setTop(topBox);
+
+    // --- Center VBox ---
+    VBox centerBox = new VBox(15);
+    centerBox.setAlignment(Pos.TOP_CENTER);
+    centerBox.setPadding(new Insets(20));
+    mainPane.setCenter(centerBox);
+
+    // --- Bottom: Back Button ---
+    HBox bottomBox = new HBox();
+    bottomBox.setPadding(new Insets(20));
+    bottomBox.setAlignment(Pos.BOTTOM_RIGHT);
+    Button backBtn = new Button("Back");
+    backBtn.setOnAction(e -> revenueReports(stage));
+    bottomBox.getChildren().add(backBtn);
+    mainPane.setBottom(bottomBox);
+
+    RevenueReportDAO dao = new RevenueReportDAO();
+
+    // --- Update report when year changes ---
+yearCombo.setOnAction(e -> {
+    int selectedYear = yearCombo.getValue();
+    centerBox.getChildren().clear();
+
+    List<RevenueReport> revenueList = dao.getRevenueByLocation(selectedYear);
+
+    if (revenueList.isEmpty()) {
+        Label noReport = new Label("No Revenue Report for Year " + selectedYear);
+        noReport.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: white;");
+        VBox.setMargin(noReport, new Insets(90, 0, 0, 0));
+        centerBox.getChildren().add(noReport);
+    } else {
+        // Title
+        Label reportTitle = new Label(selectedYear + " Revenue Report");
+        reportTitle.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: white;");
+        centerBox.getChildren().add(reportTitle);
+
+        TableView<RevenueReport> table = new TableView<>();
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        // Columns
+        TableColumn<RevenueReport, String> colLocation = new TableColumn<>("Locker Location");
+        colLocation.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().getCategory()));
+
+        TableColumn<RevenueReport, String> colRevenue = new TableColumn<>("Total Revenue");
+        colRevenue.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(
+                data.getValue().getTotalRevenue() >= 0 ?
+                        String.format("%.2f", data.getValue().getTotalRevenue()) : "N/A"));
+
+        table.getColumns().addAll(colLocation, colRevenue);
+
+        // Equal column widths
+        colLocation.prefWidthProperty().bind(table.widthProperty().multiply(0.50));
+        colRevenue.prefWidthProperty().bind(table.widthProperty().multiply(0.50));
+
+        // Populate rows dynamically
+        ObservableList<RevenueReport> tableItems = FXCollections.observableArrayList();
+        tableItems.addAll(revenueList); // only show actual locations from DB
+
+        table.setItems(tableItems);
+
+        // Wrap table for width control
+        StackPane tableWrapper = new StackPane();
+        tableWrapper.setPrefWidth(700);
+        tableWrapper.setMinWidth(700);
+        tableWrapper.setMaxWidth(700);
+        tableWrapper.getChildren().add(table);
+        tableWrapper.setAlignment(Pos.CENTER);
+
+        centerBox.setPadding(new Insets(30, 20, 20, 20)); // top padding
+        centerBox.getChildren().add(tableWrapper);
+    }
+});
+    // --- Trigger default selection ---
+    yearCombo.getOnAction().handle(null);
+
+    Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+    stage.setScene(scene);
+    stage.show();
 }
 
      /**
