@@ -6,7 +6,7 @@ public class LockerDAO {
 
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/luggage_locker_db";
     private static final String USER = "root"; // MySQL username
-    private static final String PASSWORD = "Auq_n49s.xq#"; // MySQL password
+    private static final String PASSWORD = "Raeka.101482"; // MySQL password
 
     //Get List of All Lockers
     public List<Locker> getAllLockers(){
@@ -129,4 +129,34 @@ public class LockerDAO {
         }
         return success;
     }
+
+    // gets all available lockers in a specific location
+    public List<Locker> getAvailableLockersByLocation(int locationID) {
+        List<Locker> lockers = new ArrayList<>();
+        String query = "SELECT * FROM Locker WHERE lockerStatus = 'Available' AND locationID = ?";
+
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement ps = conn.prepareStatement(query)) {
+
+            ps.setInt(1, locationID);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                Locker lock = new Locker(
+                        rs.getInt("lockerID"),
+                        rs.getInt("lockerTypeID"),
+                        rs.getInt("locationID"),
+                        rs.getInt("locationPostalCode"),
+                        rs.getString("lockerStatus")
+                );
+                lockers.add(lock);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return lockers;
+    }
+
 }

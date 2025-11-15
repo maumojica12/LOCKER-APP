@@ -978,10 +978,10 @@ private static void handleManageLocations(Stage stage) {
                     btn.setOnAction(e -> viewAllLocations(stage));
                     break;
                 case "VIEW ALL AVAILABLE LOCKER IN LOCATION":
-                    btn.setOnAction(e -> System.out.println("-> Action: Show Available Lockers in All Locations"));
+                    btn.setOnAction(e -> viewAvailableLockersInLocation(stage));
                     break;
                 case "VIEW LOCKERS IN LOCATION":
-                    btn.setOnAction(e -> System.out.println("-> Action: Show Lockers in Specific Location"));
+                    btn.setOnAction(e -> viewLockersInLocation(stage));
                     break;
                 case "RETURN TO MAIN MENU":
                     btn.setOnAction(e -> {
@@ -1086,6 +1086,363 @@ private static void handleManageLocations(Stage stage) {
         stage.show();
     }
 
+    private static void viewAvailableLockersInLocation(Stage stage) {
+
+        LocationDAO locationDAO = new LocationDAO();
+        LockerDAO lockerDAO = new LockerDAO();
+        LockerTypeDAO lockerTypeDAO = new LockerTypeDAO();
+
+        Image backgroundImage = new Image(AppFX.class.getResourceAsStream("viewAvailableLockersInLocation.jpg"));
+        ImageView backgroundView = new ImageView(backgroundImage);
+        backgroundView.setPreserveRatio(false);
+        backgroundView.setMouseTransparent(true);
+        backgroundView.setFitWidth(1300);
+        backgroundView.setFitHeight(700);
+
+        AnchorPane root = new AnchorPane();
+        root.getChildren().add(backgroundView);
+
+        double FIELD_WIDTH = 330;
+        double FIELD_HEIGHT = 40;
+
+        TextField locationIDField = new TextField();
+        locationIDField.setPromptText("Enter Location ID");
+        locationIDField.setPrefSize(FIELD_WIDTH, FIELD_HEIGHT);
+
+        Button fetchBtn = new Button("Fetch Location");
+        fetchBtn.setPrefSize(140, FIELD_HEIGHT);
+        fetchBtn.setStyle("-fx-background-color: #003366; -fx-text-fill: white; -fx-background-radius: 8;");
+
+        Label errorLabel = new Label();
+        errorLabel.setStyle("-fx-text-fill: yellow; -fx-font-size: 16; -fx-font-weight: bold;");
+
+        Label locationInfoLabel = new Label();
+        locationInfoLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold;");
+        locationInfoLabel.setWrapText(true);
+
+        AnchorPane leftPane = new AnchorPane();
+        leftPane.setPrefSize(400, 600);
+        leftPane.getChildren().addAll(locationIDField, fetchBtn, errorLabel, locationInfoLabel);
+
+        AnchorPane.setTopAnchor(locationIDField, 20.0);
+        AnchorPane.setLeftAnchor(locationIDField, 20.0);
+        AnchorPane.setTopAnchor(fetchBtn, 70.0);
+        AnchorPane.setLeftAnchor(fetchBtn, 20.0);
+        AnchorPane.setTopAnchor(errorLabel, 130.0);
+        AnchorPane.setLeftAnchor(errorLabel, 20.0);
+        AnchorPane.setTopAnchor(locationInfoLabel, 180.0);
+        AnchorPane.setLeftAnchor(locationInfoLabel, 20.0);
+
+        leftPane.setLayoutX(10);
+        leftPane.setLayoutY(100);
+
+        ScrollPane lockerScroll = new ScrollPane();
+        lockerScroll.setPrefSize(700, 400);
+        lockerScroll.setLayoutX(550);
+        lockerScroll.setLayoutY(230);
+        lockerScroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        lockerScroll.setVisible(false);
+
+        Label lockerTitle = new Label("Available Lockers in Location");
+        lockerTitle.setStyle("-fx-text-fill: white; -fx-font-size: 24px; -fx-font-weight: bold;");
+        lockerTitle.setLayoutX(560);
+        lockerTitle.setLayoutY(185);
+        lockerTitle.setVisible(false);
+
+        Button backBtn = new Button("Back to Location Menu");
+        backBtn.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        backBtn.setPrefSize(200, 40);
+        backBtn.setStyle("-fx-background-color: #003366; -fx-text-fill: white; -fx-background-radius: 8;");
+        backBtn.setLayoutX(1050);
+        backBtn.setLayoutY(630);
+
+        root.getChildren().addAll(leftPane, lockerScroll, lockerTitle, backBtn);
+
+        Scene scene = new Scene(root, 1300, 700);
+        stage.setScene(scene);
+        stage.setTitle("View Available Lockers");
+        stage.show();
+
+        fetchBtn.setOnAction(e -> {
+
+            errorLabel.setText("");
+            locationInfoLabel.setText("");
+            lockerTitle.setVisible(false);
+            lockerScroll.setVisible(false);
+
+            String input = locationIDField.getText().trim();
+
+            if (input.isEmpty()) {
+                errorLabel.setText("Please enter a Location ID!");
+                return;
+            }
+
+            try {
+                int locID = Integer.parseInt(input);
+
+                List<Location> allLocations = locationDAO.getAllLocations();
+
+                Location loc = allLocations.stream()
+                        .filter(l -> l.getLocationID() == locID)
+                        .findFirst()
+                        .orElse(null);
+
+                if (loc == null) {
+                    errorLabel.setText("No location found with ID " + locID);
+                    return;
+                }
+
+                locationInfoLabel.setText(
+                        "Location ID: " + loc.getLocationID() + "\n" +
+                                "Name: " + loc.getLocationName() + "\n" +
+                                "City: " + loc.getLocationCity() + "\n" +
+                                "Postal Code: " + loc.getLocationPostalCode() + "\n" +
+                                "Contact: " + loc.getContact()
+                );
+
+                lockerTitle.setVisible(true);
+
+                VBox lockerList = new VBox(15);
+                lockerList.setPadding(new Insets(10));
+                lockerList.setAlignment(Pos.TOP_CENTER);
+
+                List<Locker> availableLockers = lockerDAO.getAvailableLockersByLocation(locID);
+
+                if (availableLockers.isEmpty()) {
+                    Label noLocker = new Label("No available lockers in this location.");
+                    noLocker.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+                    noLocker.setTextFill(Color.WHITE);
+                    lockerList.getChildren().add(noLocker);
+                } else {
+                    for (Locker locker : availableLockers) {
+
+                        LockerType type = lockerTypeDAO.getLockerTypeByID(locker.getLockerTypeID());
+                        String size = (type != null ? type.getLockerTypeSize() : "N/A");
+
+                        HBox card = new HBox(15);
+                        card.setPadding(new Insets(15));
+                        card.setPrefWidth(600);
+                        card.setAlignment(Pos.CENTER_LEFT);
+                        card.setStyle(
+                                "-fx-background-color: rgba(255,255,255,0.85); -fx-background-radius: 12;" +
+                                        "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.25), 10,0,0,5);"
+                        );
+
+                        VBox info = new VBox(5);
+                        Label idLabel = new Label("Locker ID: " + locker.getLockerID());
+                        Label typeLabel = new Label("Size: " + size);
+                        Label postal = new Label("Postal Code: " + locker.getLocationPostalCode());
+
+                        idLabel.setTextFill(Color.BLACK);
+                        typeLabel.setTextFill(Color.BLACK);
+                        postal.setTextFill(Color.BLACK);
+
+                        info.getChildren().addAll(idLabel, typeLabel, postal);
+
+                        Region spacer = new Region();
+                        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+                        card.getChildren().addAll(info, spacer);
+                        lockerList.getChildren().add(card);
+                    }
+                }
+
+                lockerScroll.setContent(lockerList);
+                lockerScroll.setVisible(true);
+
+            } catch (NumberFormatException ex) {
+                errorLabel.setText("Invalid Location ID format!");
+            }
+        });
+
+        backBtn.setOnAction(e -> AppFX.handleManageLocations(stage));
+    }
+
+    private static void viewLockersInLocation(Stage stage) {
+
+        LocationDAO locationDAO = new LocationDAO();
+        LockerDAO lockerDAO = new LockerDAO();
+        LockerTypeDAO lockerTypeDAO = new LockerTypeDAO();
+
+        Image backgroundImage = new Image(AppFX.class.getResourceAsStream("viewLockersInLocation.jpg"));
+        ImageView backgroundView = new ImageView(backgroundImage);
+        backgroundView.setPreserveRatio(false);
+        backgroundView.setMouseTransparent(true);
+        backgroundView.setFitWidth(1300);
+        backgroundView.setFitHeight(700);
+
+        AnchorPane root = new AnchorPane();
+        root.getChildren().add(backgroundView);
+
+        double FIELD_WIDTH = 330;
+        double FIELD_HEIGHT = 40;
+
+        TextField locationIDField = new TextField();
+        locationIDField.setPromptText("Enter Location ID");
+        locationIDField.setPrefSize(FIELD_WIDTH, FIELD_HEIGHT);
+
+        Button fetchBtn = new Button("Fetch Location");
+        fetchBtn.setPrefSize(140, FIELD_HEIGHT);
+        fetchBtn.setStyle("-fx-background-color: #003366; -fx-text-fill: white; -fx-background-radius: 8;");
+
+        Label errorLabel = new Label();
+        errorLabel.setStyle("-fx-text-fill: yellow; -fx-font-size: 16; -fx-font-weight: bold;");
+
+        Label locationInfoLabel = new Label();
+        locationInfoLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold;");
+        locationInfoLabel.setWrapText(true);
+
+        AnchorPane leftPane = new AnchorPane();
+        leftPane.setPrefSize(400, 600);
+        leftPane.getChildren().addAll(locationIDField, fetchBtn, errorLabel, locationInfoLabel);
+
+        AnchorPane.setTopAnchor(locationIDField, 20.0);
+        AnchorPane.setLeftAnchor(locationIDField, 20.0);
+        AnchorPane.setTopAnchor(fetchBtn, 70.0);
+        AnchorPane.setLeftAnchor(fetchBtn, 20.0);
+        AnchorPane.setTopAnchor(errorLabel, 130.0);
+        AnchorPane.setLeftAnchor(errorLabel, 20.0);
+        AnchorPane.setTopAnchor(locationInfoLabel, 180.0);
+        AnchorPane.setLeftAnchor(locationInfoLabel, 20.0);
+
+        leftPane.setLayoutX(10);
+        leftPane.setLayoutY(100);
+
+        ScrollPane lockerScroll = new ScrollPane();
+        lockerScroll.setPrefSize(700, 400);
+        lockerScroll.setLayoutX(550);
+        lockerScroll.setLayoutY(230);
+        lockerScroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        lockerScroll.setVisible(false);
+
+        Label lockerTitle = new Label("All Lockers in Location");
+        lockerTitle.setStyle("-fx-text-fill: white; -fx-font-size: 24px; -fx-font-weight: bold;");
+        lockerTitle.setLayoutX(560);
+        lockerTitle.setLayoutY(185);
+        lockerTitle.setVisible(false);
+
+        Button backBtn = new Button("Back to Location Menu");
+        backBtn.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        backBtn.setPrefSize(200, 40);
+        backBtn.setStyle("-fx-background-color: #003366; -fx-text-fill: white; -fx-background-radius: 8;");
+        backBtn.setLayoutX(1050);
+        backBtn.setLayoutY(630);
+
+        root.getChildren().addAll(leftPane, lockerScroll, lockerTitle, backBtn);
+
+        Scene scene = new Scene(root, 1300, 700);
+        stage.setScene(scene);
+        stage.setTitle("View Lockers in Location");
+        stage.show();
+
+        fetchBtn.setOnAction(e -> {
+
+            errorLabel.setText("");
+            locationInfoLabel.setText("");
+            lockerScroll.setVisible(false);
+            lockerTitle.setVisible(false);
+
+            String input = locationIDField.getText().trim();
+
+            if (input.isEmpty()) {
+                errorLabel.setText("Please enter a Location ID!");
+                return;
+            }
+
+            try {
+                int locID = Integer.parseInt(input);
+
+                List<Location> allLocations = locationDAO.getAllLocations();
+                Location loc = allLocations.stream()
+                        .filter(l -> l.getLocationID() == locID)
+                        .findFirst()
+                        .orElse(null);
+
+                if (loc == null) {
+                    errorLabel.setText("No location found with ID " + locID);
+                    return;
+                }
+
+                locationInfoLabel.setText(
+                        "Location ID: " + loc.getLocationID() + "\n" +
+                                "Name: " + loc.getLocationName() + "\n" +
+                                "City: " + loc.getLocationCity() + "\n" +
+                                "Postal Code: " + loc.getLocationPostalCode() + "\n" +
+                                "Contact: " + loc.getContact()
+                );
+
+                lockerTitle.setVisible(true);
+
+                List<Locker> lockerListData = lockerDAO.getAllLockers();
+                List<Locker> filtered = lockerListData.stream()
+                        .filter(l -> l.getLocationID() == locID)
+                        .toList();
+
+
+                VBox lockerList = new VBox(15);
+                lockerList.setPadding(new Insets(10));
+                lockerList.setAlignment(Pos.TOP_CENTER);
+
+
+                if (filtered.isEmpty()) {
+                    Label noLocker = new Label("This location has no lockers.");
+                    noLocker.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+                    noLocker.setTextFill(Color.WHITE);
+                    lockerList.getChildren().add(noLocker);
+
+                } else {
+
+                    for (Locker locker : filtered) {
+
+                        LockerType type = lockerTypeDAO.getLockerTypeByID(locker.getLockerTypeID());
+                        String size = type != null ? type.getLockerTypeSize() : "N/A";
+
+                        VBox card = new VBox(5);
+                        card.setPadding(new Insets(15));
+                        card.setPrefWidth(600);
+                        card.setStyle("""
+                            -fx-background-color: rgba(255,255,255,0.85);
+                            -fx-background-radius: 12;
+                            -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.25), 10,0,0,5);
+                        """);
+
+                        Label idLabel = new Label("Locker ID: " + locker.getLockerID());
+                        Label sizeLabel = new Label("Size: " + size);
+                        Label postal = new Label("Postal Code: " + locker.getLocationPostalCode());
+                        Label statusLabel = new Label("Status: " + locker.getLockerStatus());
+
+                        statusLabel.setTextFill(
+                                switch (locker.getLockerStatus().toLowerCase()) {
+                                    case "available" -> Color.GREEN;
+                                    case "occupied" -> Color.RED;
+                                    case "reserved" -> Color.BLUE;
+                                    default -> Color.ORANGE;
+                                }
+                        );
+
+                        idLabel.setTextFill(Color.BLACK);
+                        sizeLabel.setTextFill(Color.BLACK);
+                        postal.setTextFill(Color.BLACK);
+                        statusLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+
+                        card.getChildren().addAll(idLabel, sizeLabel, postal, statusLabel);
+                        lockerList.getChildren().add(card);
+                    }
+
+                }
+
+                lockerScroll.setContent(lockerList);
+                lockerScroll.setVisible(true);
+
+
+            } catch (NumberFormatException ex) {
+                errorLabel.setText("Invalid Location ID format!");
+            }
+        });
+
+
+        backBtn.setOnAction(e -> AppFX.handleManageLocations(stage));
+    }
 
     private static void handleManageLockerTypes(Stage stage) {
         stage.setTitle("Luggage Locker Booking System - Locker Type Management");
