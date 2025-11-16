@@ -31,6 +31,7 @@ import javafx.scene.layout.Region;
 import javafx.beans.property.SimpleStringProperty;
 import java.util.Map;
 import java.util.HashMap;
+import java.time.Year;
 
 public class AppFX extends Application {
 
@@ -3403,8 +3404,8 @@ private static void occReportSize(Stage stage) {
     yearLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: white;");
 
     ComboBox<Integer> yearCombo = new ComboBox<>();
-    for (int y = 2000; y <= 2025; y++) yearCombo.getItems().add(y);
-    yearCombo.setValue(2025);
+    for (int y = 2000; y <= Year.now().getValue(); y++) yearCombo.getItems().add(y);
+    yearCombo.setValue(Year.now().getValue());
 
     topBox.getChildren().addAll(yearLabel, yearCombo);
     mainPane.setTop(topBox);
@@ -3452,23 +3453,27 @@ private static void occReportSize(Stage stage) {
             ));
 
             table.getColumns().addAll(colSize, colPct);
-
             colSize.prefWidthProperty().bind(table.widthProperty().multiply(0.50));
             colPct.prefWidthProperty().bind(table.widthProperty().multiply(0.50));
 
             Map<String, Double> grouped = new HashMap<>();
             Map<String, Integer> count = new HashMap<>();
+            double totalPctSum = 0.0;
 
             for (OccupancyReport r : list) {
                 grouped.merge(r.getLockerSize(), r.getOccupancyPercentage(), Double::sum);
                 count.merge(r.getLockerSize(), 1, Integer::sum);
+                totalPctSum += r.getOccupancyPercentage();
             }
 
             ObservableList<OccupancyReport> tableItems = FXCollections.observableArrayList();
             for (String size : grouped.keySet()) {
-                double avg = grouped.get(size) / count.get(size); // average occupancy
+                double avg = grouped.get(size) / count.get(size);
                 tableItems.add(new OccupancyReport(0, size, "", 0, avg));
             }
+
+            double totalAvg = totalPctSum / list.size();
+            tableItems.add(new OccupancyReport(0, "TOTAL", "", 0, totalAvg));
 
             table.setItems(tableItems);
 
@@ -3479,7 +3484,6 @@ private static void occReportSize(Stage stage) {
             tableWrapper.getChildren().add(table);
             tableWrapper.setAlignment(Pos.CENTER);
             centerBox.setPadding(new Insets(70, 20, 20, 20));
-
             centerBox.getChildren().add(tableWrapper);
         }
     });
