@@ -3287,7 +3287,7 @@ private static void handleCancellations(){
         
         switch (label) {
                 case "LOCKER OCCUPANCY REPORT":
-                    //btn.setOnAction(e -> reservation(stage));
+                    btn.setOnAction(e -> occupancyReports(stage));
                     break;
                 case "CANCELED BOOKINGS REPORT":
                     //btn.setOnAction(e -> checkIn(stage));
@@ -3306,6 +3306,74 @@ private static void handleCancellations(){
             }
             menu.getChildren().add(btn);
         }
+    return menu;
+}
+
+// --- Main Occupancy Reports Menu ---
+private static void occupancyReports(Stage stage) {
+    stage.setTitle("Luggage Locker Booking System - Occupancy Reports");
+
+    // --- Background ---
+    Image userMenuBG = new Image(AppFX.class.getResourceAsStream("main.jpg"));
+    ImageView backgroundView = new ImageView(userMenuBG);
+    backgroundView.setPreserveRatio(false);
+
+    // --- Menu Labels ---
+    String[] menuLabels = {
+            "GROUPED BY LOCKER SIZE",
+            "GROUPED BY LOCKER LOCATION",
+            "RETURN TO REPORTS MENU"
+    };
+
+    // --- Menu Buttons ---
+    VBox centerMenu = occupancyMenuButton(menuLabels, 0, menuLabels.length, stage);
+    centerMenu.setAlignment(Pos.CENTER);
+    centerMenu.setSpacing(20);
+
+    // --- Root Layout ---
+    StackPane root = new StackPane();
+    root.getChildren().addAll(backgroundView, centerMenu);
+    StackPane.setAlignment(centerMenu, Pos.CENTER);
+
+    // --- Scene Setup ---
+    Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+    backgroundView.fitWidthProperty().bind(scene.widthProperty());
+    backgroundView.fitHeightProperty().bind(scene.heightProperty());
+
+    stage.setScene(scene);
+    stage.show();
+}
+
+// --- Generate Menu Buttons for Occupancy Reports ---
+private static VBox occupancyMenuButton(String[] labels, int start, int end, Stage stage) {
+    VBox menu = new VBox(25);
+    menu.setPadding(new Insets(450, 320, 320, 320));
+    menu.setMaxWidth(VBox.USE_PREF_SIZE);
+
+    for (int i = start; i < end; i++) {
+        if (i >= labels.length) break;
+
+        String label = labels[i];
+        Button btn = new Button(label);
+        btn.setMinWidth(BUTTON_WIDTH);
+        btn.setMinHeight(BUTTON_HEIGHT);
+        btn.setMaxWidth(BUTTON_WIDTH);
+        btn.setAlignment(Pos.CENTER);
+        btn.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+
+        switch (label) {
+            case "GROUPED BY LOCKER SIZE":
+                //btn.setOnAction(e -> occReportSize(stage));
+                break;
+            case "GROUPED BY LOCKER LOCATION":
+                //btn.setOnAction(e -> occReportLocation(stage));
+                break;
+            case "RETURN TO REPORTS MENU":
+                btn.setOnAction(e -> handleReports(stage));
+                break;
+        }
+        menu.getChildren().add(btn);
+    }
     return menu;
 }
 
