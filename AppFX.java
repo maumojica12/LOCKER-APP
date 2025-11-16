@@ -3314,7 +3314,7 @@ private static void occupancyReports(Stage stage) {
     stage.setTitle("Luggage Locker Booking System - Occupancy Reports");
 
     // --- Background ---
-    Image userMenuBG = new Image(AppFX.class.getResourceAsStream("main.jpg"));
+    Image userMenuBG = new Image(AppFX.class.getResourceAsStream("occupancyReport.jpg"));
     ImageView backgroundView = new ImageView(userMenuBG);
     backgroundView.setPreserveRatio(false);
 
