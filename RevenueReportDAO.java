@@ -6,7 +6,7 @@ public class RevenueReportDAO {
 
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/luggage_locker_db";
     private static final String USER = "root";
-    private static final String PASS = "";
+    private static final String PASS = "Auq_n49s.xq#";
 
     private Connection getConnection() throws SQLException {
         return DriverManager.getConnection(URL, USER, PASS);

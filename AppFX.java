@@ -147,7 +147,7 @@ public class AppFX extends Application {
                     btn.setOnAction(e -> handleBooking(primaryStage));
                     break;
                 case "MANAGE CANCELLATIONS":
-                    btn.setOnAction(e -> handleCancellations());
+                    btn.setOnAction(e -> handleCancellations(primaryStage));
                     break;
                 case "MANAGE PAYMENTS":
                     btn.setOnAction(e -> handlePayments(primaryStage));
@@ -2477,9 +2477,322 @@ private static void viewAllActiveBookings(Stage stage){
     stage.show();
 }
 
-private static void handleCancellations(){
+private static void handleCancellations(Stage stage){
+    stage.setTitle("Luggage Locker Booking System - Cancellation Management");
+
+    Image lockerMenu = new Image(AppFX.class.getResourceAsStream("manageCancellations.jpg"));
+    ImageView backgroundView = new ImageView(lockerMenu);
+
+    String[] menuLabels = {
+            "VIEW ALL CANCELLATIONS",
+            "CANCEL RESERVATION",
+            "RETURN TO MAIN MENU"
+    };
+
+    VBox leftMenu = cancellationMenuButton(menuLabels, 0, 2, stage);
+    VBox rightMenu = cancellationMenuButton(menuLabels, 2, 4, stage);
+
+    StackPane root = new StackPane(backgroundView, leftMenu, rightMenu);
+    StackPane.setAlignment(leftMenu, Pos.CENTER_LEFT);
+    StackPane.setAlignment(rightMenu, Pos.CENTER_RIGHT);
+
+    Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+
+    backgroundView.fitWidthProperty().bind(scene.widthProperty());
+    backgroundView.fitHeightProperty().bind(scene.heightProperty());
+    backgroundView.setPreserveRatio(false);
+
+    stage.setScene(scene);
+    stage.show();
+}
+
+private static VBox cancellationMenuButton(String[] labels, int start, int end, Stage stage){
+    VBox menu = new VBox(20);
+    menu.setPadding(new Insets(450, 320, 320, 320));
+    menu.setMaxWidth(VBox.USE_PREF_SIZE);
+
+    for (int i = start; i < end; i++) {
+        if (i >= labels.length) break;
+
+        String label = labels[i];
+        Button btn = new Button(label);
+
+        btn.setMinWidth(BUTTON_WIDTH);
+        btn.setMinHeight(BUTTON_HEIGHT);
+        btn.setMaxWidth(BUTTON_WIDTH);
+        btn.setAlignment(Pos.CENTER);
+        btn.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;");
+
+        switch (label) {
+            case "VIEW ALL CANCELLATIONS" ->
+                    btn.setOnAction(e -> viewAllCancellations(stage));
+
+            case "CANCEL RESERVATION" ->
+                    btn.setOnAction(e -> cancelAReservation(stage));
+
+            case "RETURN TO MAIN MENU" ->
+                    btn.setOnAction(e -> new AppFX().start(stage));
+        }
+
+        menu.getChildren().add(btn);
+    }
+
+    return menu;
 
 }
+
+private static void viewAllCancellations(Stage stage) {
+    StackPane root = new StackPane();
+    Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+
+    Image bg = new Image(AppFX.class.getResourceAsStream("viewCancellation.jpg"));
+    ImageView bgView = new ImageView(bg);
+    bgView.fitWidthProperty().bind(scene.widthProperty());
+    bgView.fitHeightProperty().bind(scene.heightProperty());
+    bgView.setPreserveRatio(false);
+    root.getChildren().add(bgView);
+
+    ScrollPane scrollPane = new ScrollPane();
+    scrollPane.setFitToWidth(true);
+    scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+    scrollPane.setPrefViewportHeight(500);
+
+    VBox list = new VBox(15);
+    list.setPadding(new Insets(10));
+    list.setAlignment(Pos.TOP_CENTER);
+
+    CancellationDAO dao = new CancellationDAO();
+    List<Cancellation> cancellations = dao.getAllCancellations();
+
+    if (cancellations.isEmpty()) {
+        Label none = new Label("No cancellation records found.");
+        none.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        none.setTextFill(Color.WHITE);
+        list.getChildren().add(none);
+    }
+    else {
+        for (Cancellation c : cancellations) {
+
+            VBox card = new VBox(6);
+            card.setPadding(new Insets(15));
+            card.setPrefWidth(900);
+            card.setStyle("""
+                -fx-background-color: rgba(255,255,255,0.85);
+                -fx-background-radius: 12;
+                -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.25), 10, 0, 0, 5);
+            """);
+
+            Label id = new Label("Cancellation ID: " + c.getCancellationID());
+            Label ref = new Label("Booking Reference: " + c.getBookingReference());
+            Label date = new Label("Cancelled On: " + c.getCancelDate());
+            Label reason = new Label("Reason: " + c.getReason());
+            Label refund = new Label("Refund Fee: ₱" + c.getRefundFee());
+
+            id.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+
+            for (Label l : List.of(id, ref, date, reason, refund)) {
+                l.setFont(Font.font("Arial", 14));
+                l.setTextFill(Color.BLACK);
+            }
+
+            card.getChildren().addAll(id, ref, date, reason, refund);
+            list.getChildren().add(card);
+        }
+    }
+
+    scrollPane.setContent(list);
+
+    Button backBtn = new Button("Return to Cancellation Menu");
+    backBtn.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+    backBtn.setStyle("-fx-background-color:#003366; -fx-text-fill:white; -fx-background-radius:8;");
+    backBtn.setPrefSize(250, 40);
+    backBtn.setOnAction(e -> handleCancellations(stage));
+
+    VBox content = new VBox(30, scrollPane, backBtn);
+    content.setAlignment(Pos.TOP_CENTER);
+    content.setPadding(new Insets(230, 20, 40, 20));
+
+    root.getChildren().add(content);
+    StackPane.setAlignment(content, Pos.TOP_CENTER);
+
+    stage.setScene(scene);
+    stage.setTitle("Cancellation Records");
+    stage.show();
+}
+
+    private static void cancelAReservation(Stage stage) {
+
+        StackPane root = new StackPane();
+        Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+
+        Image bg = new Image(AppFX.class.getResourceAsStream("cancelReservation.jpg"));
+        ImageView bgView = new ImageView(bg);
+        bgView.fitWidthProperty().bind(scene.widthProperty());
+        bgView.fitHeightProperty().bind(scene.heightProperty());
+        bgView.setPreserveRatio(false);
+        root.getChildren().add(bgView);
+
+        HBox mainLayout = new HBox(50);
+        mainLayout.setPadding(new Insets(50, 0, 0, 0));
+        mainLayout.setAlignment(Pos.TOP_CENTER);
+
+        //LEFT PANEL
+        VBox leftPanel = new VBox(20);
+        leftPanel.setAlignment(Pos.TOP_CENTER);
+
+        Label reasonTitle = new Label("Enter Cancellation Reason:");
+        reasonTitle.setFont(Font.font("Arial", FontWeight.BOLD, 22));
+        reasonTitle.setTextFill(Color.BLACK);
+
+        TextField reasonField = new TextField();
+        reasonField.setPromptText("Type cancellation reason...");
+        reasonField.setPrefWidth(350);
+
+        Label errorLabel = new Label("");
+        errorLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        errorLabel.setTextFill(Color.RED);
+
+        leftPanel.getChildren().addAll(reasonTitle, reasonField, errorLabel);
+
+
+        //RIGHT PANEL
+        VBox rightPanel = new VBox(20);
+        rightPanel.setAlignment(Pos.TOP_CENTER);
+
+        Label rightTitle = new Label("Select a Booking to Cancel");
+        rightTitle.setFont(Font.font("Arial", FontWeight.BOLD, 22));
+        rightTitle.setTextFill(Color.BLACK);
+
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setFitToWidth(true);
+        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        scrollPane.setPrefViewportHeight(500);
+
+        VBox bookingList = new VBox(15);
+        bookingList.setAlignment(Pos.TOP_CENTER);
+
+        scrollPane.setContent(bookingList);
+
+        rightPanel.getChildren().addAll(rightTitle, scrollPane);
+
+        // FETCH BOOKINGS
+        BookingDAO bookingDAO = new BookingDAO();
+        LockerDAO lockerDAO = new LockerDAO();
+        UserDAO userDAO = new UserDAO();
+        CancellationDAO cancellationDAO = new CancellationDAO();
+
+        List<Booking> pendingBookings = bookingDAO.getPendingCheckInBookings();
+
+        if (pendingBookings.isEmpty()) {
+            Label none = new Label("No reservations available for cancellation.");
+            none.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+            none.setTextFill(Color.BLACK);
+            bookingList.getChildren().add(none);
+        } else {
+            for (Booking booking : pendingBookings) {
+
+                //CARD CONTAINER
+                HBox card = new HBox(15);
+                card.setPadding(new Insets(15));
+                card.setPrefWidth(600);
+                card.setAlignment(Pos.CENTER_LEFT);
+                card.setStyle("""
+                -fx-background-color: rgba(255,255,255,0.90);
+                -fx-background-radius: 12;
+                -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.25), 10, 0, 0, 5);
+            """);
+
+                //FETCH USER + LOCKER INFO
+                User user = userDAO.getUserById(booking.getUserID());
+                Locker locker = lockerDAO.getLockerByID(booking.getLockerID());
+                LockerTypeDAO lockerTypeDAO = new LockerTypeDAO();
+                String size = lockerTypeDAO.getLockerTypeByID(locker.getLockerTypeID()).getLockerTypeSize();
+
+                //LABELS
+                Label info = new Label(
+                        "Booking Ref: " + booking.getBookingReference() + "\n" +
+                                "User: " + user.getFirstName() + " " + user.getLastName() + "\n" +
+                                "Locker: " + locker.getLockerID() + " (" + size + ")\n" +
+                                "Reservation Date: " + booking.getReservationDate()
+                );
+                info.setTextFill(Color.BLACK);
+                info.setFont(Font.font("Arial", 14));
+
+                //CANCEL BUTTON
+                Button cancelBtn = new Button("✖ Cancel");
+                cancelBtn.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+                cancelBtn.setStyle("-fx-background-color: #c62828; -fx-text-fill: white; -fx-background-radius: 8;");
+                cancelBtn.setCursor(Cursor.HAND);
+
+                cancelBtn.setOnAction(e -> {
+
+                    // Validate reason
+                    String reason = reasonField.getText().trim();
+                    if (reason.isEmpty()) {
+                        errorLabel.setText("Please enter a cancellation reason.");
+                        return;
+                    }
+
+                    // Check if too late to cancel
+                    try {
+                        if (booking.getCheckInTime() != null) {
+                            LocalDateTime checkIn = LocalDateTime.parse(booking.getCheckInTime());
+                            if (LocalDateTime.now().isAfter(checkIn.minusHours(1))) {
+                                errorLabel.setText("Cancellation allowed only 1 hour before check-in.");
+                                return;
+                            }
+                        }
+                    } catch (Exception ex) {
+                        errorLabel.setText("Stored date format invalid.");
+                        return;
+                    }
+
+                    // Perform cancellation
+                    booking.setBookingStatus("Cancelled");
+                    bookingDAO.updateBooking(booking);
+
+                    lockerDAO.updateLockerStatus(booking.getLockerID(), "Available");
+
+                    cancellationDAO.addCancellation(
+                            booking.getBookingReference(),
+                            LocalDateTime.now().toString(),
+                            reason,
+                            booking.getReservationFee()
+                    );
+
+                    errorLabel.setTextFill(Color.GREEN);
+                    errorLabel.setText("Booking cancelled successfully!");
+                    bookingList.getChildren().remove(card);
+                });
+
+                Region spacer = new Region();
+                HBox.setHgrow(spacer, Priority.ALWAYS);
+
+                card.getChildren().addAll(info, spacer, cancelBtn);
+                bookingList.getChildren().add(card);
+            }
+        }
+
+        //BACK BUTTON
+        Button backBtn = new Button("Back to Cancellation Menu");
+        backBtn.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        backBtn.setPrefWidth(300);
+        backBtn.setStyle("-fx-background-color:#003366; -fx-text-fill:white; -fx-background-radius:8;");
+        backBtn.setOnAction(e -> handleCancellations(stage));
+
+
+        VBox finalLayout = new VBox(20, mainLayout, backBtn);
+        finalLayout.setAlignment(Pos.TOP_CENTER);
+        finalLayout.setPadding(new Insets(240, 0, 40, 0));
+        root.getChildren().add(finalLayout);
+
+        mainLayout.getChildren().addAll(leftPanel, rightPanel);
+
+        stage.setScene(scene);
+        stage.setTitle("Cancel Reservation");
+        stage.show();
+    }
+
 
 
      private static void handlePayments(Stage stage) {
@@ -3547,7 +3860,7 @@ private static void handleCancellations(){
                     btn.setOnAction(e -> occupancyReports(stage));
                     break;
                 case "CANCELED BOOKINGS REPORT":
-                    //btn.setOnAction(e -> checkIn(stage));
+                    btn.setOnAction(e -> canceledBookingsReport(stage));
                     break;
                 case "PAYMENT TRANSACTIONS REPORT":
                     btn.setOnAction(e -> paymentTransactionReport(stage));
@@ -4288,6 +4601,123 @@ yearCombo.setOnAction(e -> {
     stage.setScene(scene);
     stage.show();
 }
+
+private static void canceledBookingsReport(Stage stage) {
+
+    StackPane root = new StackPane();
+    Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+
+    // --- Background image ---
+    ImageView bg = new ImageView(new Image(AppFX.class.getResourceAsStream("cancelReservation.jpg")));
+    bg.fitWidthProperty().bind(scene.widthProperty());
+    bg.fitHeightProperty().bind(scene.heightProperty());
+    bg.setPreserveRatio(false);
+    root.getChildren().add(bg);
+
+    // DAO
+    CancellationDAO dao = new CancellationDAO();
+
+    // --- Table Definition ---
+    TableView<CanceledBookingsReport> table = new TableView<>();
+    table.setPrefWidth(1150);
+    table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+    TableColumn<CanceledBookingsReport, Integer> colID =
+            new TableColumn<>("Cancellation ID");
+    colID.setCellValueFactory(new PropertyValueFactory<>("cancellationID"));
+
+    TableColumn<CanceledBookingsReport, String> colRef =
+            new TableColumn<>("Booking Reference");
+    colRef.setCellValueFactory(new PropertyValueFactory<>("bookingReference"));
+
+    TableColumn<CanceledBookingsReport, String> colUser =
+            new TableColumn<>("User");
+    colUser.setCellValueFactory(new PropertyValueFactory<>("userName"));
+
+    TableColumn<CanceledBookingsReport, String> colSize =
+            new TableColumn<>("Locker Size");
+    colSize.setCellValueFactory(new PropertyValueFactory<>("lockerSize"));
+
+    TableColumn<CanceledBookingsReport, String> colLoc =
+            new TableColumn<>("Locker Location");
+    colLoc.setCellValueFactory(new PropertyValueFactory<>("lockerLocation"));
+
+    TableColumn<CanceledBookingsReport, LocalDateTime> colDate =
+            new TableColumn<>("Cancelled Date");
+    colDate.setCellValueFactory(new PropertyValueFactory<>("cancelDate"));
+    colDate.setCellFactory(column -> new TableCell<>() {
+        @Override
+        protected void updateItem(LocalDateTime item, boolean empty) {
+            super.updateItem(item, empty);
+            if (empty || item == null) {
+                setText(null);
+            } else {
+                setText(item.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
+            }
+        }
+    });
+
+    TableColumn<CanceledBookingsReport, String> colReason =
+            new TableColumn<>("Reason");
+    colReason.setCellValueFactory(new PropertyValueFactory<>("reason"));
+
+    TableColumn<CanceledBookingsReport, Double> colRefund =
+            new TableColumn<>("Refund Amount");
+    colRefund.setCellValueFactory(new PropertyValueFactory<>("refundAmount"));
+
+    table.getColumns().addAll(colID, colRef, colUser, colSize, colLoc, colDate, colReason, colRefund);
+
+    // --- Month Filter ---
+    ComboBox<String> monthBox = new ComboBox<>();
+    monthBox.getItems().addAll("January","February","March","April","May","June",
+            "July","August","September","October","November","December");
+    monthBox.setValue(LocalDate.now().getMonth().name().substring(0,1) +
+            LocalDate.now().getMonth().name().substring(1).toLowerCase());
+
+    // --- Year Filter ---
+    ComboBox<Integer> yearBox = new ComboBox<>();
+    for (int y = 2020; y <= LocalDate.now().getYear(); y++) yearBox.getItems().add(y);
+    yearBox.setValue(LocalDate.now().getYear());
+
+    Button filterBtn = new Button("Apply Filter");
+    filterBtn.setStyle("-fx-background-color:#003366; -fx-text-fill:white; -fx-font-weight:bold;");
+
+    filterBtn.setOnAction(e -> {
+        int month = monthBox.getSelectionModel().getSelectedIndex() + 1;
+        int year = yearBox.getValue();
+        table.getItems().setAll(dao.getCancellationReport(month, year));
+    });
+
+    // Load initial month/year
+    table.getItems().setAll(dao.getCancellationReport(
+            LocalDate.now().getMonthValue(),
+            LocalDate.now().getYear()
+    ));
+
+    // Layout filters horizontally
+    HBox filters = new HBox(15,
+            new Label("Month:"), monthBox,
+            new Label("Year:"), yearBox,
+            filterBtn
+    );
+    filters.setAlignment(Pos.CENTER);
+    // Back button
+    Button back = new Button("Back to Reports Menu");
+    back.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+    back.setStyle("-fx-background-color:#003366; -fx-text-fill:white;");
+    back.setOnAction(e -> handleReports(stage));
+
+    VBox layout = new VBox(25, filters, table, back);
+    layout.setAlignment(Pos.TOP_CENTER);
+    layout.setPadding(new Insets(220, 20, 40, 20));  // adjusts vertical position
+
+    root.getChildren().add(layout);
+
+    stage.setScene(scene);
+    stage.setTitle("Canceled Bookings Report");
+    stage.show();
+}
+
 
      /**
      * shows it for 5 seconds, and then terminates the application.
