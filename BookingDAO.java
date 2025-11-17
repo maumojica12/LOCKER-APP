@@ -6,7 +6,7 @@ public class BookingDAO {
 
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/luggage_locker_db";
     private static final String USER = "root";
-    private static final String PASSWORD = "Auq_n49s.xq#";
+    private static final String PASSWORD = "Raeka.101482";
 
     // --- Generate unique booking reference in format BKG-0001 ---
     public String generateBookingReference() {
@@ -115,38 +115,6 @@ public class BookingDAO {
         return booking;
     }
 
-    // --- Get all bookings by user ---
-    public List<Booking> getBookingsByUser(int userID) {
-        List<Booking> bookings = new ArrayList<>();
-        String sql = "SELECT * FROM Booking WHERE userID = ?";
-
-        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setInt(1, userID);
-            ResultSet rs = stmt.executeQuery();
-
-            while (rs.next()) {
-                Booking booking = new Booking(
-                        rs.getString("bookingReference"),
-                        rs.getInt("userID"),
-                        rs.getInt("lockerID"),
-                        rs.getDouble("reservationFee"),
-                        rs.getString("reservationDate"),
-                        rs.getString("bookingStatus"),
-                        rs.getString("checkInTime"),
-                        rs.getString("checkOutTime")
-                );
-                bookings.add(booking);
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return bookings;
-    }
-
     public List<Booking> getPendingCheckInBookings() {
     List<Booking> bookings = new ArrayList<>();
     String sql = "SELECT * FROM Booking WHERE bookingStatus = 'Pending Check-in'";
@@ -206,5 +174,37 @@ public List<Booking> getCheckedInBookings() {
 
     return bookings;
 }
+
+    public boolean updateCheckOutTime(String bookingReference) {
+        String sql = "UPDATE Booking SET checkOutTime = NOW() WHERE bookingReference = ?";
+
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, bookingReference);
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean updateBookingStatus(String bookingReference, String newStatus) {
+        String sql = "UPDATE Booking SET bookingStatus = ? WHERE bookingReference = ?";
+
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, newStatus);
+            ps.setString(2, bookingReference);
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
 
 }

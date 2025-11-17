@@ -69,15 +69,14 @@ CREATE TABLE Cancellation(
 
 -- 3. PAYMENT TABLE
 CREATE TABLE Payment(
-		paymentID INT AUTO_INCREMENT PRIMARY KEY,
-		bookingReference VARCHAR(20),
-		userID INT NOT NULL,
-		paymentAmount DECIMAL(10,2),
-		paymentMethod ENUM('Credit Card', 'E-wallet'),
-		paymentStatus ENUM('Paid', 'Not Paid') DEFAULT 'Not Paid',
-		paymentDate DATETIME DEFAULT NOW(),
-		FOREIGN KEY (bookingReference) REFERENCES Booking(bookingReference),
-		FOREIGN KEY (userID) REFERENCES User(userID)
+    paymentID INT AUTO_INCREMENT PRIMARY KEY,
+    bookingReference VARCHAR(20),
+    userID INT NOT NULL,
+    paymentAmount DECIMAL(10,2),
+    paymentMethod ENUM('Credit Card', 'E-wallet'),
+    paymentStatus ENUM('Paid', 'Not Paid') DEFAULT 'Not Paid',
+    paymentDate DATETIME DEFAULT NOW(),
+    FOREIGN KEY (userID) REFERENCES User(userID)
 );
 
 -- 4. LOCKER TRANSFER TABLE
@@ -186,40 +185,28 @@ INSERT INTO Locker (lockerTypeID, locationID, locationPostalCode, lockerStatus) 
 
 -- Booking
 INSERT INTO Booking (bookingReference, userID, lockerID, reservationFee, reservationDate, bookingStatus, checkInTime, checkOutTime) VALUES
-('BKG-0001', 1, 1, 80.00, NOW(), 'Checked-In', NOW(), NULL),
-('BKG-0002', 2, 2, 120.00, NOW(), 'Pending Check-in', NULL, NULL),
-('BKG-0003', 3, 3, 180.00, NOW(), 'Cancelled', NULL, NULL),
-('BKG-0004', 4, 4, 80.00, NOW(), 'Checked-In', NOW(), NULL),
-('BKG-0005', 5, 5, 120.00, NOW(), 'Checked-In', NOW(), NULL),
-('BKG-0006', 6, 6, 120.00, NOW(), 'Pending Check-in', NULL, NULL),
-('BKG-0007', 7, 7, 180.00, NOW(), 'Cancelled', NULL, NULL),
-('BKG-0008', 8, 8, 180.00, NOW(), 'Checked-In', NOW(), NULL),
-('BKG-0009', 9, 9, 80.00, NOW(), 'Checked-In', NOW(), NULL),
-('BKG-0010', 10, 10, 180.00, NOW(), 'Pending Check-in', NULL, NULL);
+('BKG-0001', 1, 1, 80.00,  '2025-05-19 11:10:26', 'Checked-Out', '2025-05-19 14:15:26', '2025-05-19 15:17:26'),
+('BKG-0002', 2, 2, 120.00, DATE_SUB(NOW(), INTERVAL 8 HOUR), 'Pending Check-in', NULL, NULL),
+('BKG-0003', 3, 3, 180.00, DATE_SUB(NOW(), INTERVAL 3 HOUR), 'Cancelled',        NULL, NULL),
+('BKG-0004', 4, 4, 80.00,  '2025-04-16 05:46:16', 'Checked-Out',    '2025-04-16 07:56:16', '2025-04-16 08:46:16'),
+('BKG-0005', 5, 5, 120.00, DATE_SUB(NOW(), INTERVAL 4 HOUR), 'Checked-In',       DATE_SUB(NOW(), INTERVAL 3 HOUR), NULL),
+('BKG-0006', 6, 6, 120.00, DATE_SUB(NOW(), INTERVAL 5 HOUR), 'Pending Check-in', NULL, NULL),
+('BKG-0007', 7, 7, 180.00, DATE_SUB(NOW(), INTERVAL 6 HOUR), 'Cancelled',        NULL, NULL),
+('BKG-0008', 8, 8, 180.00, '2025-05-14 23:50:49', 'Checked-Out',       '2025-05-15 01:50:49', '2025-05-15 02:44:49'),
+('BKG-0009', 9, 9, 80.00,  '2025-02-27 10:10:26', 'Checked-Out',       '2025-02-27 12:10:26', '2025-02-27 14:21:26'),
+('BKG-0010', 10, 10, 180.00, DATE_SUB(NOW(), INTERVAL 4 HOUR), 'Pending Check-in', NULL, NULL);
 
 -- Payment
-INSERT INTO Payment (bookingReference, userID, paymentAmount, paymentMethod, paymentStatus, paymentDate) VALUES
-('BKG-0001', 1, 80.00, 'E-wallet', 'Paid', NOW()),
-('BKG-0002', 2, 120.00, 'Credit Card', 'Not Paid', NOW()),
-('BKG-0003', 3, 180.00, 'E-wallet', 'Not Paid', NOW()),
-('BKG-0004', 4, 80.00, 'E-wallet', 'Paid', NOW()),
-('BKG-0005', 5, 120.00, 'Credit Card', 'Paid', NOW()),
-('BKG-0006', 6, 120.00, 'Credit Card', 'Not Paid', NOW()),
-('BKG-0007', 7, 180.00, 'E-wallet', 'Not Paid', NOW()),
-('BKG-0008', 8, 180.00, 'Credit Card', 'Paid', NOW()),
-('BKG-0009', 9, 80.00, 'E-wallet', 'Paid', NOW()),
-('BKG-0010', 10, 180.00, 'Credit Card', 'Not Paid', NOW());
+INSERT INTO Payment (paymentID, bookingReference, userID, paymentAmount, paymentMethod, paymentStatus, paymentDate) VALUES
+(1, 'BKG-0001', 1, 80.0, 'E-wallet', 'Paid', '2025-05-19 15:17:26'),
+(2, 'BKG-0004', 4, 80.0, 'Credit Card', 'Paid', '2025-04-16 08:46:16'),
+(3, 'BKG-0008', 8, 180.0, 'Credit Card', 'Paid', '2025-05-15 02:44:49'),
+(4, 'BKG-0009', 9, 240.0, 'E-wallet', 'Paid', '2025-02-27 14:21:26');
 
 -- Cancellation
 INSERT INTO Cancellation (bookingReference, cancelDate, reason, refundFee) VALUES
 ('BKG-0003', NOW(), 'User cancelled before check-in', 100.00),
-('BKG-0007', NOW(), 'User cancelled', 150.00);
-
--- Locker Transfer
-INSERT INTO LockerTransfer (bookingReference, transferDate, adjustmentAmount, oldLockerID, newLockerID) VALUES
-('BKG-0001', NOW(), 40.00, 1, 2),
-('BKG-0005', NOW(), 20.00, 5, 6),
-('BKG-0008', NOW(), 30.00, 8, 9);
+('BKG-0007', NOW(), 'User cancelled', 0);
 
 
 SELECT * FROM User;

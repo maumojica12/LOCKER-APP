@@ -32,6 +32,18 @@ import javafx.beans.property.SimpleStringProperty;
 import java.util.Map;
 import java.util.HashMap;
 import java.time.Year;
+import java.sql.Timestamp;
+import javafx.stage.Modality;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.geometry.Insets;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+import java.time.LocalDate;
+import java.util.List;
 
 public class AppFX extends Application {
 
@@ -2518,10 +2530,7 @@ private static void handleCancellations(){
                     btn.setOnAction(e -> viewAllPayments(stage));
                     break;
                 case "RELEASE LOCKER (PROCESS PAYMENT)":
-                    btn.setOnAction(e -> {
-                        // TODO: open your payment processing / locker release form
-                        System.out.println("-> Action: Process Payment and Release Locker");
-                    });
+                    btn.setOnAction(e -> releaseLockerAndProcessPayment(stage));
                     break;
                 case "SEARCH PAYMENT BY ID":
                     btn.setOnAction(e ->   searchPayment(stage));
@@ -2641,9 +2650,253 @@ private static void handleCancellations(){
         stage.show();
     }
 
-    // Payment and Release of Locker
-    private void releaseLockerAndProcessPayment(String bookingReference){
+    // RELEASE LOCKER (PROCESS PAYMENT)
+    private static void releaseLockerAndProcessPayment(Stage stage) {
+        Image backgroundImage = new Image(AppFX.class.getResourceAsStream("selectBooking.jpg"));
+        ImageView backgroundView = new ImageView(backgroundImage);
+        backgroundView.setPreserveRatio(false);
+
+        StackPane root = new StackPane();
+        double INITIAL_WIDTH = 1300;
+        double INITIAL_HEIGHT = 700;
+        Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+
+        backgroundView.fitWidthProperty().bind(scene.widthProperty());
+        backgroundView.fitHeightProperty().bind(scene.heightProperty());
+        root.getChildren().add(backgroundView);
+
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setFitToWidth(true);
+        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        scrollPane.setPrefViewportHeight(500);
+
+        VBox bookingList = new VBox(15);
+        bookingList.setPadding(new Insets(10));
+        bookingList.setAlignment(Pos.TOP_CENTER);
+
+        BookingDAO bookingDAO = new BookingDAO();
+        LockerDAO lockerDAO = new LockerDAO();
+        LockerTypeDAO lockerTypeDAO = new LockerTypeDAO();
+        UserDAO userDAO = new UserDAO();
+        PaymentDAO paymentDAO = new PaymentDAO();
+
+        List<Booking> checkedInBookings = bookingDAO.getCheckedInBookings();
+
+        if (checkedInBookings.isEmpty()) {
+            Label noBooking = new Label("No Checked-In Bookings.");
+            noBooking.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+            noBooking.setTextFill(Color.WHITE);
+
+            StackPane wrapper = new StackPane(noBooking);
+            wrapper.setPrefWidth(900);
+            StackPane.setAlignment(noBooking, Pos.TOP_CENTER);
+            StackPane.setMargin(noBooking, new Insets(120, 0, 0, 0));
+
+            bookingList.getChildren().add(wrapper);
+        } else {
+            for (Booking booking : checkedInBookings) {
+                HBox card = new HBox(15);
+                card.setPadding(new Insets(15));
+                card.setPrefWidth(900);
+                card.setAlignment(Pos.CENTER_LEFT);
+                card.setStyle(
+                        "-fx-background-color: rgba(255,255,255,0.85); " +
+                                "-fx-background-radius: 12; " +
+                                "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.25), 10, 0, 0, 5);"
+                );
+
+                // --- Fetch user and locker info ---
+                User user = userDAO.getUserById(booking.getUserID());
+                Locker locker = lockerDAO.getLockerByID(booking.getLockerID());
+                LockerType lockerType = lockerTypeDAO.getLockerTypeByID(locker.getLockerTypeID());
+                String lockerSize = lockerType != null ? lockerType.getLockerTypeSize() : "Unknown";
+
+                // --- Build info label using TextFlow ---
+                Text bookingRefText = new Text("Booking Reference: " + booking.getBookingReference() + "\n");
+                bookingRefText.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+                bookingRefText.setFill(Color.BLACK);
+
+                Text statusText = new Text(
+                        "Booking Status: " + booking.getBookingStatus() + "\n" +
+                                "Check-In Date: " + booking.getCheckInTime() + "\n" +
+                                "User ID: " + user.getUserID() + "\n" +
+                                "User Name: " + user.getFirstName() + " " + user.getLastName() + "\n" +
+                                "Locker ID: " + locker.getLockerID() + " [" + lockerSize + "]"
+                );
+                statusText.setFont(Font.font("Arial", 14));
+                statusText.setFill(Color.BLACK);
+
+                TextFlow infoFlow = new TextFlow(bookingRefText, statusText);
+
+                // --- Payment Method Dropdown ---
+                ComboBox<String> paymentMethodCombo = new ComboBox<>();
+                paymentMethodCombo.getItems().addAll("Credit Card", "E-wallet");
+                paymentMethodCombo.setValue("Credit Card");
+                paymentMethodCombo.setPrefWidth(120);
+
+                VBox paymentBox = new VBox(5, paymentMethodCombo);
+                paymentBox.setAlignment(Pos.CENTER);
+
+                // --- Process Payment Button ---
+                Button processBtn = new Button("Process Payment");
+                processBtn.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+                processBtn.setStyle("-fx-background-color: #28a745; -fx-text-fill: white; -fx-background-radius: 8;");
+                processBtn.setCursor(Cursor.HAND);
+
+                processBtn.setOnAction(e -> {
+                    String selectedMethod = paymentMethodCombo.getValue();
+                    LocalDateTime paymentTime = LocalDateTime.now(); // this is both checkout & payment time
+
+                    // --- Update booking checkout time and status ---
+                    booking.setCheckOutTime(paymentTime.format(Booking.FORMATTER));
+                    booking.setBookingStatus("Checked-out");
+                    bookingDAO.updateBooking(booking);
+
+                    // --- Update locker status ---
+                    locker.setLockerStatus("Available");
+                    lockerDAO.updateLockerStatus(locker.getLockerID(), "Available");
+                    /*
+                    // --- Calculate total fee using paymentTime as checkout ---
+                    double hours = booking.calculateDurationHours(); // rounded up
+                    double rate = lockerType != null ? lockerType.getLockerRate() : 0;
+                    double totalFee = (hours * rate) - booking.getReservationFee();
+                    if (totalFee < 0) totalFee = 0;
+                    */
+                    // --- Calculate total fee using paymentTime as checkout ---
+                    double hours = booking.calculateDurationHours(); // already rounded up
+                    double rate = lockerType != null ? lockerType.getLockerRate() : 0;
+                    double totalUsageFee = hours * rate; // no extra ceil
+                    double remainingFee = totalUsageFee - booking.getReservationFee();
+                    if (remainingFee < 0) remainingFee = 0;
+                    double totalFee = booking.getReservationFee() + remainingFee;
+
+                    // --- Insert payment ---
+                    // Create Payment object (paymentID can be 0 as placeholder)
+                    Payment payment = new Payment(
+                            0,
+                            booking.getBookingReference(),
+                            booking.getUserID(),
+                            totalFee,
+                            paymentMethodCombo.getValue(),
+                            "Paid",
+                            Timestamp.valueOf(paymentTime)
+                    );
+
+                    payment = paymentDAO.addPayment(payment); // paymentID is now set
+
+                    // Generate receipt
+                    releaseLockerReceiptPage(payment);
+                    bookingList.getChildren().remove(card);
+                });
+
+                Region spacer = new Region();
+                HBox.setHgrow(spacer, Priority.ALWAYS);
+
+                card.getChildren().addAll(infoFlow, spacer, paymentBox, processBtn);
+                bookingList.getChildren().add(card);
+            }
+        }
+
+        scrollPane.setContent(bookingList);
+
+        // --- Back Button ---
+        Button backBtn = new Button("Back to Booking Menu");
+        backBtn.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        backBtn.setPrefWidth(200);
+        backBtn.setPrefHeight(40);
+        backBtn.setStyle("-fx-background-color: #003366; -fx-text-fill: white; -fx-background-radius: 8;");
+        backBtn.setOnAction(e -> handlePayments(stage));
+
+        // --- Layout positioning ---
+        VBox content = new VBox(20, scrollPane, backBtn);
+        content.setAlignment(Pos.TOP_CENTER);
+        content.setPadding(new Insets(200, 20, 40, 20));
+
+        root.getChildren().add(content);
+        StackPane.setAlignment(content, Pos.TOP_CENTER);
+
+        stage.setScene(scene);
+        stage.setTitle("Release Locker & Process Payment");
+        stage.show();
     }
+
+    private static void releaseLockerReceiptPage(Payment payment) {
+        Stage receiptStage = new Stage();
+        receiptStage.setTitle("Payment Receipt");
+        receiptStage.initModality(Modality.APPLICATION_MODAL);
+
+        StackPane root = new StackPane();
+        root.setPadding(new Insets(20));
+        Scene scene = new Scene(root, 500, 450);
+
+        VBox content = new VBox(15);
+        content.setPadding(new Insets(20));
+        content.setAlignment(Pos.TOP_LEFT);
+
+        BookingDAO bookingDAO = new BookingDAO();
+        LockerDAO lockerDAO = new LockerDAO();
+        LockerTypeDAO lockerTypeDAO = new LockerTypeDAO();
+        UserDAO userDAO = new UserDAO();
+
+        Booking booking = bookingDAO.getBookingByReference(payment.getBookingReference());
+        User user = userDAO.getUserById(payment.getUserID());
+        Locker locker = lockerDAO.getLockerByID(booking.getLockerID());
+        LockerType lockerType = lockerTypeDAO.getLockerTypeByID(locker.getLockerTypeID());
+
+        String lockerSize = lockerType != null ? lockerType.getLockerTypeSize() : "Unknown";
+
+        double reservationFee = booking.getReservationFee();
+        double remainingFee = payment.getPaymentAmount() - reservationFee; // compute remaining
+        double totalFee = payment.getPaymentAmount();
+
+        Label title = new Label("Payment Receipt");
+        title.setFont(Font.font("Arial", FontWeight.BOLD, 24));
+        title.setTextFill(Color.DEEPPINK);
+
+// --- Add Payment ID ---
+        Label paymentIDLabel = new Label("Payment ID: " + payment.getPaymentID());
+        paymentIDLabel.setFont(Font.font("Arial", 16));
+        paymentIDLabel.setTextFill(Color.BLACK);
+
+        Label bookingRef = new Label("Booking Reference: " + payment.getBookingReference());
+        Label userInfo = new Label("User: " + user.getFirstName() + " " + user.getLastName() + " (ID: " + user.getUserID() + ")");
+        Label lockerInfo = new Label("Locker: " + locker.getLockerID() + " [" + lockerSize + "]");
+        Label duration = new Label("Check-In: " + booking.getCheckInTime() + "\nCheck-Out: " + booking.getCheckOutTime());
+
+        Label feeBreakdown = new Label(
+                String.format(
+                        "Reservation Fee: ₱%.2f\nRemaining Amount: ₱%.2f\nTotal Amount Paid: ₱%.2f",
+                        reservationFee,
+                        remainingFee,
+                        totalFee
+                )
+        );
+
+        Label paymentInfo = new Label(
+                "Payment Method: " + payment.getPaymentMethod() + "\n" +
+                        "Payment Status: " + payment.getPaymentStatus() + "\n" +
+                        "Payment Date: " + payment.getPaymentDate()
+        );
+
+        for (Label l : new Label[]{paymentIDLabel, bookingRef, userInfo, lockerInfo, duration, feeBreakdown, paymentInfo}) {
+            l.setFont(Font.font("Arial", 16));
+            l.setTextFill(Color.BLACK);
+        }
+
+        Button closeBtn = new Button("Close");
+        closeBtn.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        closeBtn.setStyle("-fx-background-color: #003366; -fx-text-fill: white; -fx-background-radius: 8;");
+        closeBtn.setPrefWidth(100);
+        closeBtn.setOnAction(e -> receiptStage.close());
+
+        content.getChildren().addAll(title, paymentIDLabel, bookingRef, userInfo, lockerInfo, duration, feeBreakdown, paymentInfo, closeBtn);
+
+        root.getChildren().add(content);
+
+        receiptStage.setScene(scene);
+        receiptStage.showAndWait(); // modal pop-up
+    }
+
 
     // Search Payments
     private static void searchPayment(Stage stage) {
@@ -3297,7 +3550,7 @@ private static void handleCancellations(){
                     //btn.setOnAction(e -> checkIn(stage));
                     break;
                 case "PAYMENT TRANSACTIONS REPORT":
-                    //btn.setOnAction(e -> viewAllActiveBookings(stage));
+                    btn.setOnAction(e -> paymentTransactionReport(stage));
                     break;
                 case "REVENUE REPORT":
                     btn.setOnAction(e -> revenueReports(stage));
@@ -3605,7 +3858,135 @@ private static void occReportLocation(Stage stage) {
     stage.show();
 }
 
-private static void revenueReports(Stage stage){
+    private static void paymentTransactionReport(Stage stage) {
+        stage.setTitle("Payment Transaction Report");
+
+        // --- Background ---
+        Image bg = new Image(AppFX.class.getResourceAsStream("paymentReportBG.jpg"));
+        ImageView bgView = new ImageView(bg);
+        bgView.setPreserveRatio(false);
+
+        StackPane root = new StackPane();
+        root.getChildren().add(bgView);
+        bgView.fitWidthProperty().bind(root.widthProperty());
+        bgView.fitHeightProperty().bind(root.heightProperty());
+
+        BorderPane mainPane = new BorderPane();
+        root.getChildren().add(mainPane);
+
+        // --- TOP (Date Inputs) ---
+        HBox topBox = new HBox(15);
+        topBox.setAlignment(Pos.CENTER_LEFT);
+        topBox.setPadding(new Insets(200, 20, 20, 100)); // same spacing style as your example
+
+        Label startLabel = new Label("Start Date:");
+        startLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: white;");
+
+        DatePicker startPicker = new DatePicker();
+        startPicker.setPromptText("Start");
+
+        Label endLabel = new Label("End Date:");
+        endLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: white;");
+
+        DatePicker endPicker = new DatePicker();
+        endPicker.setPromptText("End");
+
+        Button generateBtn = new Button("Generate");
+        generateBtn.setStyle("-fx-background-color: #FF69B4; -fx-text-fill: white;");
+
+        topBox.getChildren().addAll(startLabel, startPicker, endLabel, endPicker, generateBtn);
+        mainPane.setTop(topBox);
+
+        // --- CENTER ---
+        VBox centerBox = new VBox(20);
+        centerBox.setAlignment(Pos.TOP_CENTER);
+        centerBox.setPadding(new Insets(50, 20, 20, 20));
+        mainPane.setCenter(centerBox);
+
+        // --- BOTTOM: back button ---
+        HBox bottomBox = new HBox();
+        bottomBox.setAlignment(Pos.BOTTOM_RIGHT);
+        bottomBox.setPadding(new Insets(20));
+
+        Button backBtn = new Button("Back");
+        backBtn.setOnAction(e -> handleReports(stage));  // change to your reports menu method
+        bottomBox.getChildren().add(backBtn);
+
+        mainPane.setBottom(bottomBox);
+
+        // DAO
+        PaymentReportDAO dao = new PaymentReportDAO();
+
+        // --- Action on Generate ---
+        generateBtn.setOnAction(e -> {
+            centerBox.getChildren().clear();
+
+            if (startPicker.getValue() == null || endPicker.getValue() == null) {
+                Label warn = new Label("Please select BOTH start and end dates.");
+                warn.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: white;");
+                centerBox.getChildren().add(warn);
+                return;
+            }
+
+            Timestamp startTS = Timestamp.valueOf(startPicker.getValue().atStartOfDay());
+            Timestamp endTS = Timestamp.valueOf(endPicker.getValue().atTime(23, 59, 59));
+
+            List<PaymentReportEntry> result = dao.getPaymentsByDateRange(startTS, endTS);
+
+            if (result.isEmpty()) {
+                Label noData = new Label("No Payment Transactions Found");
+                noData.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: white;");
+                centerBox.getChildren().add(noData);
+                return;
+            }
+
+            // --- TABLE ---
+            TableView<PaymentReportEntry> table = new TableView<>();
+            table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+            TableColumn<PaymentReportEntry, Integer> colID = new TableColumn<>("Payment ID");
+            colID.setCellValueFactory(new PropertyValueFactory<>("paymentID"));
+
+            TableColumn<PaymentReportEntry, String> colBR = new TableColumn<>("Booking Ref");
+            colBR.setCellValueFactory(new PropertyValueFactory<>("bookingReference"));
+
+            TableColumn<PaymentReportEntry, Integer> colUID = new TableColumn<>("User ID");
+            colUID.setCellValueFactory(new PropertyValueFactory<>("userID"));
+
+            TableColumn<PaymentReportEntry, String> colName = new TableColumn<>("User Name");
+            colName.setCellValueFactory(new PropertyValueFactory<>("userName"));
+
+            TableColumn<PaymentReportEntry, Double> colAmt = new TableColumn<>("Amount Paid");
+            colAmt.setCellValueFactory(new PropertyValueFactory<>("paymentAmount"));
+
+            TableColumn<PaymentReportEntry, String> colMeth = new TableColumn<>("Method");
+            colMeth.setCellValueFactory(new PropertyValueFactory<>("paymentMethod"));
+
+            TableColumn<PaymentReportEntry, String> colStat = new TableColumn<>("Status");
+            colStat.setCellValueFactory(new PropertyValueFactory<>("paymentStatus"));
+
+            TableColumn<PaymentReportEntry, Timestamp> colDate = new TableColumn<>("Payment Date");
+            colDate.setCellValueFactory(new PropertyValueFactory<>("paymentDate"));
+
+            table.getColumns().addAll(colID, colBR, colUID, colName, colAmt, colMeth, colStat, colDate);
+
+            table.setItems(FXCollections.observableArrayList(result));
+
+            StackPane tableWrapper = new StackPane();
+            tableWrapper.setPrefWidth(900);
+            tableWrapper.setMaxWidth(900);
+            tableWrapper.getChildren().add(table);
+
+            centerBox.getChildren().add(tableWrapper);
+        });
+
+        Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+        stage.setScene(scene);
+        stage.show();
+    }
+
+
+    private static void revenueReports(Stage stage){
         stage.setTitle("Luggage Locker Booking System - Revenue Reports");
 
         // --- Background ---
