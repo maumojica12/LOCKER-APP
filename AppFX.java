@@ -3524,7 +3524,7 @@ private static void viewAllCancellations(Stage stage) {
         newLockerLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
         newLockerLabel.setTextFill(Color.BLACK);
 
-        // --- Select New Locker ComboBox ---
+        // --- ComboBox for available lockers ---
         ComboBox<Locker> lockerCombo = new ComboBox<>();
         lockerCombo.setPrefWidth(300);
         lockerCombo.setMaxWidth(300);
@@ -3549,7 +3549,7 @@ private static void viewAllCancellations(Stage stage) {
         });
         lockerCombo.setButtonCell(lockerCombo.getCellFactory().call(null));
 
-        // --- Adjustment Fee (auto-updated) ---
+        // --- Adjustment Fee ---
         Label amountLabel = new Label("Adjustment Amount:");
         amountLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
         amountLabel.setTextFill(Color.BLACK);
@@ -3560,10 +3560,12 @@ private static void viewAllCancellations(Stage stage) {
         amountField.setStyle("-fx-pref-height: 50px; -fx-font-size: 20px;");
         amountField.setEditable(false);
 
+        // Auto-update fee
         lockerCombo.valueProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
                 LockerType lt = lockerTypeDAO.getLockerTypeByID(newVal.getLockerTypeID());
                 double fee = 0;
+
                 if (lt != null) {
                     switch (lt.getLockerTypeSize()) {
                         case "Small":  fee = 40; break;
@@ -3607,6 +3609,7 @@ private static void viewAllCancellations(Stage stage) {
 
         VBox formContainer = new VBox(fieldsBox, buttonsBox);
         formContainer.setAlignment(Pos.TOP_LEFT);
+
         VBox rootContent = new VBox(formContainer);
         rootContent.setAlignment(Pos.TOP_LEFT);
         rootContent.setPadding(new Insets(50, 20, 40, 20));
@@ -3624,15 +3627,34 @@ private static void viewAllCancellations(Stage stage) {
                 String bookingRef = bookingField.getText().trim();
                 int oldLockerID = Integer.parseInt(oldLockerField.getText().trim());
                 Locker selectedLocker = lockerCombo.getValue();
+
                 if (selectedLocker == null) {
-                    Alert alert = new Alert(Alert.AlertType.WARNING, "Please select a new locker.");
+                    new Alert(Alert.AlertType.WARNING, "Please select a new locker.").showAndWait();
+                    return;
+                }
+
+                int newLockerID = selectedLocker.getLockerID();
+
+                // --- #2 Prevent overlapping locker IDs ---
+                if (oldLockerID == newLockerID) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Invalid Transfer");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Old Locker ID and New Locker ID cannot be the same.");
                     alert.showAndWait();
                     return;
                 }
-                int newLockerID = selectedLocker.getLockerID();
+
                 double adjAmount = Double.parseDouble(amountField.getText());
 
-                LockerTransfer transfer = new LockerTransfer(bookingRef, LocalDateTime.now(), adjAmount, oldLockerID, newLockerID);
+                LockerTransfer transfer = new LockerTransfer(
+                        bookingRef,
+                        LocalDateTime.now(),
+                        adjAmount,
+                        oldLockerID,
+                        newLockerID
+                );
+
                 int id = LockerTransferDAO.addTransfer(transfer);
 
                 Alert alert = new Alert(Alert.AlertType.INFORMATION);
