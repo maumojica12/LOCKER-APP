@@ -5,7 +5,7 @@ import java.util.List;
 public class UserDAO {
     private final String URL = "jdbc:mysql://localhost:3306/luggage_locker_db";
     private final String USER = "root";          // change if you have a different MySQL username
-    private final String PASSWORD = "Auq_n49s.xq#";          // set your MySQL password if any
+    private final String PASSWORD = "22757205";          // set your MySQL password if any
 
     // --- Utility method for connecting to the database ---
    private Connection getConnection() throws SQLException {

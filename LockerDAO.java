@@ -6,7 +6,7 @@ public class LockerDAO {
 
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/luggage_locker_db";
     private static final String USER = "root"; // MySQL username
-    private static final String PASSWORD = "Auq_n49s.xq#"; // MySQL password
+    private static final String PASSWORD = "22757205"; // MySQL password
 
     //Get List of All Lockers
     public List<Locker> getAllLockers(){

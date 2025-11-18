@@ -1,5 +1,4 @@
 import java.sql.*;
-import java.time.Year;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -7,25 +6,22 @@ public class OccupancyReportDAO {
 
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/luggage_locker_db";
     private static final String USER = "root";
-    private static final String PASS = "Auq_n49s.xq#";
+    private static final String PASS = "22757205";
 
     private Connection getConnection() throws SQLException {
         return DriverManager.getConnection(URL, USER, PASS);
     }
 
-    // Yearly occupancy per locker
-    public List<OccupancyReport> getYearlyOccupancy(int year) {
+    public List<OccupancyReport> getOccupancyBySize(int year) {
         List<OccupancyReport> list = new ArrayList<>();
 
         String sql = """
-            SELECT L.lockerID, LT.lockerTypeSize, LOC.locationName,
-                   COUNT(B.bookingReference) AS totalBookings
+            SELECT LT.lockerTypeSize, COUNT(B.bookingReference) AS totalBookings
             FROM Locker L
             JOIN LockerType LT ON L.lockerTypeID = LT.lockerTypeID
-            JOIN Location LOC ON L.locationID = LOC.locationID
             LEFT JOIN Booking B ON L.lockerID = B.lockerID AND YEAR(B.reservationDate) = ?
-            GROUP BY L.lockerID, LT.lockerTypeSize, LOC.locationName
-            ORDER BY LOC.locationName, L.lockerID
+            GROUP BY LT.lockerTypeSize
+            ORDER BY LT.lockerTypeSize
         """;
 
         try (Connection conn = getConnection();
@@ -34,18 +30,46 @@ public class OccupancyReportDAO {
             stmt.setInt(1, year);
             ResultSet rs = stmt.executeQuery();
 
-            int daysInYear = Year.of(year).length(); // 365 or 366
+            while (rs.next()) {
+                list.add(new OccupancyReport(
+                        0,
+                        rs.getString("lockerTypeSize"),
+                        "",
+                        rs.getInt("totalBookings")
+                ));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    public List<OccupancyReport> getOccupancyByLocation(int year) {
+        List<OccupancyReport> list = new ArrayList<>();
+
+        String sql = """
+            SELECT LOC.locationName, COUNT(B.bookingReference) AS totalBookings
+            FROM Locker L
+            JOIN Location LOC ON L.locationID = LOC.locationID
+            LEFT JOIN Booking B ON L.lockerID = B.lockerID AND YEAR(B.reservationDate) = ?
+            GROUP BY LOC.locationName
+            ORDER BY LOC.locationName
+        """;
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, year);
+            ResultSet rs = stmt.executeQuery();
 
             while (rs.next()) {
-                int totalBookings = rs.getInt("totalBookings");
-                double occupancyPct = ((double) totalBookings / daysInYear) * 100;
-
                 list.add(new OccupancyReport(
-                        rs.getInt("lockerID"),
-                        rs.getString("lockerTypeSize"),
+                        0,
+                        "",
                         rs.getString("locationName"),
-                        totalBookings,
-                        occupancyPct
+                        rs.getInt("totalBookings")
                 ));
             }
 

@@ -3,14 +3,12 @@ public class OccupancyReport {
     private String lockerSize;
     private String lockerLocation;
     private int totalBookings;
-    private double occupancyPercentage;
 
-    public OccupancyReport(int lockerID, String lockerSize, String lockerLocation, int totalBookings, double occupancyPercentage) {
+    public OccupancyReport(int lockerID, String lockerSize, String lockerLocation, int totalBookings) {
         this.lockerID = lockerID;
         this.lockerSize = lockerSize;
         this.lockerLocation = lockerLocation;
         this.totalBookings = totalBookings;
-        this.occupancyPercentage = occupancyPercentage;
     }
 
     public int getLockerID() { 
@@ -29,12 +27,8 @@ public class OccupancyReport {
         return totalBookings; 
     }
 
-    public double getOccupancyPercentage() { 
-        return occupancyPercentage; 
-    }
-
     @Override
     public String toString() {
-        return lockerID + " | " + lockerSize + " | " + lockerLocation + " | " + totalBookings + " | " + String.format("%.2f", occupancyPercentage) + "%";
+        return lockerID + " | " + lockerSize + " | " + lockerLocation + " | " + totalBookings;
     }
 }

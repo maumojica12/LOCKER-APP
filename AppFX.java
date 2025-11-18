@@ -3879,33 +3879,27 @@ private static void viewAllCancellations(Stage stage) {
     return menu;
 }
 
-// --- Main Occupancy Reports Menu ---
 private static void occupancyReports(Stage stage) {
     stage.setTitle("Luggage Locker Booking System - Occupancy Reports");
 
-    // --- Background ---
     Image userMenuBG = new Image(AppFX.class.getResourceAsStream("occupancyReport.jpg"));
     ImageView backgroundView = new ImageView(userMenuBG);
     backgroundView.setPreserveRatio(false);
 
-    // --- Menu Labels ---
     String[] menuLabels = {
             "GROUPED BY LOCKER SIZE",
             "GROUPED BY LOCKER LOCATION",
             "RETURN TO REPORTS MENU"
     };
 
-    // --- Menu Buttons ---
     VBox centerMenu = occupancyMenuButton(menuLabels, 0, menuLabels.length, stage);
     centerMenu.setAlignment(Pos.CENTER);
     centerMenu.setSpacing(20);
 
-    // --- Root Layout ---
     StackPane root = new StackPane();
     root.getChildren().addAll(backgroundView, centerMenu);
     StackPane.setAlignment(centerMenu, Pos.CENTER);
 
-    // --- Scene Setup ---
     Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
     backgroundView.fitWidthProperty().bind(scene.widthProperty());
     backgroundView.fitHeightProperty().bind(scene.heightProperty());
@@ -3914,7 +3908,6 @@ private static void occupancyReports(Stage stage) {
     stage.show();
 }
 
-// --- Generate Menu Buttons for Occupancy Reports ---
 private static VBox occupancyMenuButton(String[] labels, int start, int end, Stage stage) {
     VBox menu = new VBox(25);
     menu.setPadding(new Insets(450, 320, 320, 320));
@@ -3954,8 +3947,7 @@ private static void occReportSize(Stage stage) {
     ImageView backgroundView = new ImageView(bg);
     backgroundView.setPreserveRatio(false);
 
-    StackPane root = new StackPane();
-    root.getChildren().add(backgroundView);
+    StackPane root = new StackPane(backgroundView);
     backgroundView.fitWidthProperty().bind(root.widthProperty());
     backgroundView.fitHeightProperty().bind(root.heightProperty());
 
@@ -3995,7 +3987,7 @@ private static void occReportSize(Stage stage) {
         int selectedYear = yearCombo.getValue();
         centerBox.getChildren().clear();
 
-        List<OccupancyReport> list = dao.getYearlyOccupancy(selectedYear);
+        List<OccupancyReport> list = dao.getOccupancyBySize(selectedYear);
 
         if (list.isEmpty()) {
             Label noReport = new Label("No Occupancy Report for Year " + selectedYear);
@@ -4013,42 +4005,23 @@ private static void occReportSize(Stage stage) {
             TableColumn<OccupancyReport, String> colSize = new TableColumn<>("Locker Size");
             colSize.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getLockerSize()));
 
-            TableColumn<OccupancyReport, String> colPct = new TableColumn<>("Occupancy %");
-            colPct.setCellValueFactory(data -> new SimpleStringProperty(
-                    String.format("%.2f%%", data.getValue().getOccupancyPercentage())
+            TableColumn<OccupancyReport, String> colTotal = new TableColumn<>("Total Bookings");
+            colTotal.setCellValueFactory(data -> new SimpleStringProperty(
+                    String.valueOf(data.getValue().getTotalBookings())
             ));
 
-            table.getColumns().addAll(colSize, colPct);
-            colSize.prefWidthProperty().bind(table.widthProperty().multiply(0.50));
-            colPct.prefWidthProperty().bind(table.widthProperty().multiply(0.50));
+            table.getColumns().addAll(colSize, colTotal);
+            colSize.prefWidthProperty().bind(table.widthProperty().multiply(0.5));
+            colTotal.prefWidthProperty().bind(table.widthProperty().multiply(0.5));
 
-            Map<String, Double> grouped = new HashMap<>();
-            Map<String, Integer> count = new HashMap<>();
-            double totalPctSum = 0.0;
+            table.setItems(FXCollections.observableArrayList(list));
 
-            for (OccupancyReport r : list) {
-                grouped.merge(r.getLockerSize(), r.getOccupancyPercentage(), Double::sum);
-                count.merge(r.getLockerSize(), 1, Integer::sum);
-                totalPctSum += r.getOccupancyPercentage();
-            }
-
-            ObservableList<OccupancyReport> tableItems = FXCollections.observableArrayList();
-            for (String size : grouped.keySet()) {
-                double avg = grouped.get(size) / count.get(size);
-                tableItems.add(new OccupancyReport(0, size, "", 0, avg));
-            }
-
-            double totalAvg = totalPctSum / list.size();
-            tableItems.add(new OccupancyReport(0, "TOTAL", "", 0, totalAvg));
-
-            table.setItems(tableItems);
-
-            StackPane tableWrapper = new StackPane();
+            StackPane tableWrapper = new StackPane(table);
             tableWrapper.setPrefWidth(700);
             tableWrapper.setMinWidth(700);
             tableWrapper.setMaxWidth(700);
-            tableWrapper.getChildren().add(table);
             tableWrapper.setAlignment(Pos.CENTER);
+
             centerBox.setPadding(new Insets(70, 20, 20, 20));
             centerBox.getChildren().add(tableWrapper);
         }
@@ -4068,8 +4041,7 @@ private static void occReportLocation(Stage stage) {
     ImageView backgroundView = new ImageView(bg);
     backgroundView.setPreserveRatio(false);
 
-    StackPane root = new StackPane();
-    root.getChildren().add(backgroundView);
+    StackPane root = new StackPane(backgroundView);
     backgroundView.fitWidthProperty().bind(root.widthProperty());
     backgroundView.fitHeightProperty().bind(root.heightProperty());
 
@@ -4084,8 +4056,8 @@ private static void occReportLocation(Stage stage) {
     yearLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: white;");
 
     ComboBox<Integer> yearCombo = new ComboBox<>();
-    for (int y = 2000; y <= 2025; y++) yearCombo.getItems().add(y);
-    yearCombo.setValue(2025);
+    for (int y = 2000; y <= Year.now().getValue(); y++) yearCombo.getItems().add(y);
+    yearCombo.setValue(Year.now().getValue());
 
     topBox.getChildren().addAll(yearLabel, yearCombo);
     mainPane.setTop(topBox);
@@ -4109,7 +4081,7 @@ private static void occReportLocation(Stage stage) {
         int selectedYear = yearCombo.getValue();
         centerBox.getChildren().clear();
 
-        List<OccupancyReport> list = dao.getYearlyOccupancy(selectedYear);
+        List<OccupancyReport> list = dao.getOccupancyByLocation(selectedYear);
 
         if (list.isEmpty()) {
             Label noReport = new Label("No Occupancy Report for Year " + selectedYear);
@@ -4127,36 +4099,21 @@ private static void occReportLocation(Stage stage) {
             TableColumn<OccupancyReport, String> colLoc = new TableColumn<>("Location");
             colLoc.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getLockerLocation()));
 
-            TableColumn<OccupancyReport, String> colPct = new TableColumn<>("Occupancy %");
-            colPct.setCellValueFactory(data -> new SimpleStringProperty(
-                    String.format("%.2f%%", data.getValue().getOccupancyPercentage())
+            TableColumn<OccupancyReport, String> colTotal = new TableColumn<>("Total Bookings");
+            colTotal.setCellValueFactory(data -> new SimpleStringProperty(
+                    String.valueOf(data.getValue().getTotalBookings())
             ));
 
-            table.getColumns().addAll(colLoc, colPct);
-            colLoc.prefWidthProperty().bind(table.widthProperty().multiply(0.50));
-            colPct.prefWidthProperty().bind(table.widthProperty().multiply(0.50));
+            table.getColumns().addAll(colLoc, colTotal);
+            colLoc.prefWidthProperty().bind(table.widthProperty().multiply(0.5));
+            colTotal.prefWidthProperty().bind(table.widthProperty().multiply(0.5));
 
-            Map<String, Double> grouped = new HashMap<>();
-            Map<String, Integer> count = new HashMap<>();
+            table.setItems(FXCollections.observableArrayList(list));
 
-            for (OccupancyReport r : list) {
-                grouped.merge(r.getLockerLocation(), r.getOccupancyPercentage(), Double::sum);
-                count.merge(r.getLockerLocation(), 1, Integer::sum);
-            }
-
-            ObservableList<OccupancyReport> tableItems = FXCollections.observableArrayList();
-            for (String loc : grouped.keySet()) {
-                double avg = grouped.get(loc) / count.get(loc);
-                tableItems.add(new OccupancyReport(0, "", loc, 0, avg));
-            }
-
-            table.setItems(tableItems);
-
-            StackPane tableWrapper = new StackPane();
+            StackPane tableWrapper = new StackPane(table);
             tableWrapper.setPrefWidth(700);
             tableWrapper.setMinWidth(700);
             tableWrapper.setMaxWidth(700);
-            tableWrapper.getChildren().add(table);
             tableWrapper.setAlignment(Pos.CENTER);
 
             centerBox.setPadding(new Insets(30, 20, 20, 20));
@@ -4174,7 +4131,6 @@ private static void occReportLocation(Stage stage) {
     private static void paymentTransactionReport(Stage stage) {
         stage.setTitle("Payment Transaction Report");
 
-        // --- Background ---
         Image bg = new Image(AppFX.class.getResourceAsStream("paymentReportBG.jpg"));
         ImageView bgView = new ImageView(bg);
         bgView.setPreserveRatio(false);
@@ -4187,11 +4143,9 @@ private static void occReportLocation(Stage stage) {
         BorderPane mainPane = new BorderPane();
         root.getChildren().add(mainPane);
 
-        // --- TOP (Date Inputs) ---
         HBox topBox = new HBox(15);
         topBox.setAlignment(Pos.CENTER_LEFT);
-        topBox.setPadding(new Insets(200, 20, 20, 100)); // same spacing style as your example
-
+        topBox.setPadding(new Insets(200, 20, 20, 100)); 
         Label startLabel = new Label("Start Date:");
         startLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: white;");
 
@@ -4210,27 +4164,23 @@ private static void occReportLocation(Stage stage) {
         topBox.getChildren().addAll(startLabel, startPicker, endLabel, endPicker, generateBtn);
         mainPane.setTop(topBox);
 
-        // --- CENTER ---
         VBox centerBox = new VBox(20);
         centerBox.setAlignment(Pos.TOP_CENTER);
         centerBox.setPadding(new Insets(50, 20, 20, 20));
         mainPane.setCenter(centerBox);
 
-        // --- BOTTOM: back button ---
         HBox bottomBox = new HBox();
         bottomBox.setAlignment(Pos.BOTTOM_RIGHT);
         bottomBox.setPadding(new Insets(20));
 
         Button backBtn = new Button("Back");
-        backBtn.setOnAction(e -> handleReports(stage));  // change to your reports menu method
+        backBtn.setOnAction(e -> handleReports(stage)); 
         bottomBox.getChildren().add(backBtn);
 
         mainPane.setBottom(bottomBox);
 
-        // DAO
         PaymentReportDAO dao = new PaymentReportDAO();
 
-        // --- Action on Generate ---
         generateBtn.setOnAction(e -> {
             centerBox.getChildren().clear();
 
@@ -4253,7 +4203,6 @@ private static void occReportLocation(Stage stage) {
                 return;
             }
 
-            // --- TABLE ---
             TableView<PaymentReportEntry> table = new TableView<>();
             table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
@@ -4297,7 +4246,6 @@ private static void occReportLocation(Stage stage) {
         stage.setScene(scene);
         stage.show();
     }
-
 
     private static void revenueReports(Stage stage){
         stage.setTitle("Luggage Locker Booking System - Revenue Reports");

@@ -94,15 +94,27 @@ CREATE TABLE LockerTransfer(
 
 
 -- REPORTS
+
 -- 1. OCCUPANCY REPORTS
-SELECT L.lockerID AS 'Locker ID', LT.lockerTypeSize AS 'Locker Size', LOC.locationName AS 'Locker Location',
+-- 1. OCCUPANCY REPORTS
+
+-- 1.1 LOCKER SIZE REPORT
+SELECT LT.lockerTypeSize AS 'Locker Size',
        COUNT(B.bookingReference) AS 'Total Bookings'
 FROM Locker L
 JOIN LockerType LT ON L.lockerTypeID = LT.lockerTypeID
+LEFT JOIN Booking B ON L.lockerID = B.lockerID AND YEAR(B.reservationDate) = 2025
+GROUP BY LT.lockerTypeSize
+ORDER BY LT.lockerTypeSize;
+
+-- 1.2 LOCATION REPORT
+SELECT LOC.locationName AS 'Locker Location',
+       COUNT(B.bookingReference) AS 'Total Bookings'
+FROM Locker L
 JOIN Location LOC ON L.locationID = LOC.locationID
 LEFT JOIN Booking B ON L.lockerID = B.lockerID AND YEAR(B.reservationDate) = 2025
-GROUP BY L.lockerID, LT.lockerTypeSize, LOC.locationName
-ORDER BY LOC.locationName, L.lockerID;
+GROUP BY LOC.locationName
+ORDER BY LOC.locationName;
 
 -- 2. CANCELED BOOKINGS REPORT
 SELECT C.cancellationID AS 'Cancellation ID', B.bookingReference AS 'Booking Reference', CONCAT(U.firstName, ' ', U.lastName) AS 'User',

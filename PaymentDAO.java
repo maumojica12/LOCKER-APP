@@ -6,7 +6,7 @@ public class PaymentDAO {
 
     private static final String URL = "jdbc:mysql://localhost:3306/luggage_locker_db";
     private static final String USER = "root";
-    private static final String PASSWORD = "Raeka.101482";
+    private static final String PASSWORD = "22757205";
 
     // VIEW ALL PAYMENTS
     public List<Payment> getAllPayments() {
