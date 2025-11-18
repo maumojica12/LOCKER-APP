@@ -222,4 +222,20 @@ public class LockerTransferDAO {
 
         return success;
     }
+
+    public static boolean isLockerAlreadyTransferred(int lockerID) {
+        String query = "SELECT COUNT(*) FROM LockerTransfer WHERE newLockerID = ?";
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement ps = conn.prepareStatement(query)) {
+            ps.setInt(1, lockerID);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
 }

@@ -3607,7 +3607,7 @@ private static void viewAllCancellations(Stage stage) {
         return menu;
     }
 
-    private static void performLockerTransfer(Stage stage) {
+    private static void performLockerTransfer(Stage stage) { 
         // --- Background setup ---
         Image backgroundImage = new Image(AppFX.class.getResourceAsStream("lockerTransferBG.jpg"));
         ImageView backgroundView = new ImageView(backgroundImage);
@@ -3764,6 +3764,16 @@ private static void viewAllCancellations(Stage stage) {
                     alert.setTitle("Invalid Transfer");
                     alert.setHeaderText(null);
                     alert.setContentText("Old Locker ID and New Locker ID cannot be the same.");
+                    alert.showAndWait();
+                    return;
+                }
+
+                // --- #5 Prevent overlapping newLockerIDs ---
+                if (LockerTransferDAO.isLockerAlreadyTransferred(newLockerID)) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Invalid Transfer");
+                    alert.setHeaderText(null);
+                    alert.setContentText("The selected locker is already assigned for another transfer. Please choose a different locker.");
                     alert.showAndWait();
                     return;
                 }
