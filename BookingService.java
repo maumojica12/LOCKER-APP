@@ -1,3 +1,5 @@
+import java.time.temporal.ChronoUnit;
+import java.time.format.DateTimeFormatter;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -6,49 +8,67 @@ public class BookingService {
     private final UserDAO userDAO;
     private final BookingDAO bookingDAO;
     private final LockerDAO lockerDAO;
+    private final CancellationDAO cancellationDAO;
 
-    public BookingService(UserDAO userDAO, BookingDAO bookingDAO, LockerDAO lockerDAO) {
+    public BookingService(UserDAO userDAO, BookingDAO bookingDAO, LockerDAO lockerDAO, CancellationDAO cancellationDAO) {
         this.userDAO = userDAO;
         this.bookingDAO = bookingDAO;
         this.lockerDAO = lockerDAO;
+        this.cancellationDAO = cancellationDAO;
     }
 
-    public Booking makeReservation(int userID, int lockerID, double reservationFee) {
-    // 1. Verify user exists
-    if (userDAO.getUserById(userID) == null) {
-        System.out.println("User not found. Cannot make reservation.");
-        return null;
-    }
+    public Booking makeReservation(int userID, int lockerID, double reservationFee, LocalDateTime selectedDate) {
+        // Verify user exists
+        if (userDAO.getUserById(userID) == null) {
+            System.out.println("User not found. Cannot make reservation.");
+            return null;
+        }
 
-    // 2. Verify locker availability
-    List<Locker> availableLockers = lockerDAO.getAvailableLocker();
-    boolean lockerAvailable = availableLockers.stream()
-                                               .anyMatch(l -> l.getLockerID() == lockerID);
+        // Verify locker availability
+        List<Locker> availableLockers = lockerDAO.getAvailableLocker();
+        boolean lockerAvailable = availableLockers.stream()
+                                                .anyMatch(l -> l.getLockerID() == lockerID);
 
-    if (!lockerAvailable) {
-        System.out.println("Locker not available.");
-        return null;
-    }
+        if (!lockerAvailable) {
+            System.out.println("Locker not available.");
+            return null;
+        }
 
-    // 3. Create booking object
-    Booking booking = new Booking(userID, lockerID, reservationFee, "Pending Check-in");
+        // Format the selected date into DB string
+        String formattedSelectedDate = selectedDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
-    // 4. Add booking to DB (DAO generates bookingReference)
-    boolean success = bookingDAO.addBooking(booking);
-    if (!success) {
-        System.out.println("Failed to create reservation.");
-        return null;
-    }
+        // Generate booking reference
+        String bookingRef = bookingDAO.generateBookingReference();
 
-    // 5. Update locker status to "Reserved"
-    boolean lockerUpdated = lockerDAO.updateLockerStatus(lockerID, "Reserved");
-    if (!lockerUpdated) {
-        System.out.println("Warning: Failed to update locker status to Reserved.");
-    }
+        // Create booking object
+        Booking booking = new Booking(
+            bookingRef,                              
+            userID,                                    
+            lockerID,                                   
+            reservationFee,                             
+            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), 
+            formattedSelectedDate,                      
+            "Pending Check-in",                         
+            null,                                   
+            null                                      
+        );
 
-    System.out.println("Reservation Confirmed!");
-    System.out.println("Booking Reference: " + booking.getBookingReference());
-    return booking;
+        //Add booking to DB
+        boolean success = bookingDAO.addBooking(booking);
+        if (!success) {
+            System.out.println("Failed to create reservation.");
+            return null;
+        }
+
+        // Update locker status to "Reserved"
+        boolean lockerUpdated = lockerDAO.updateLockerStatus(lockerID, "Reserved");
+        if (!lockerUpdated) {
+            System.out.println("Warning: Failed to update locker status to Reserved.");
+        }
+
+        System.out.println("Reservation Confirmed!");
+        System.out.println("Booking Reference: " + booking.getBookingReference());
+        return booking;
 }
 
     // --- CHECK-IN ---
@@ -82,6 +102,40 @@ public class BookingService {
         System.out.println("Available Lockers:");
         for (Locker locker : availableLockers) {
             System.out.println(locker);
+        }
+    }
+
+    // --- Automatic handling of no-shows on or before selected reservation
+        public void processNoShowBookings() {
+        // Formatter for your DB date format
+        DateTimeFormatter dbFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        List<Booking> pendingBookings = bookingDAO.getPendingCheckInBookings();
+        LocalDateTime now = LocalDateTime.now();
+
+        for (Booking booking : pendingBookings) {
+            // Parse reservation date from DB format
+            LocalDateTime selectedTime = LocalDateTime.parse(booking.getSelectedReservationDate(), dbFormatter);
+
+            if (selectedTime.isBefore(now)) { 
+                // Update locker status
+                lockerDAO.updateLockerStatus(booking.getLockerID(), "Available");
+
+                // Update booking status
+                booking.setBookingStatus("Cancelled");
+                bookingDAO.updateBookingStatus(booking.getBookingReference(), "Cancelled");
+
+                // Cancellation time (1 second after reservation)
+                LocalDateTime cancelDate = selectedTime.plusSeconds(1);
+
+                // Add cancellation record
+                cancellationDAO.addCancellation(
+                    booking.getBookingReference(),
+                    cancelDate.format(dbFormatter), // Format for DB
+                    "Customer failed to check-in on Reserved date and time",
+                    0
+                );
+                System.out.println("No-show processed for booking: " + booking.getBookingReference());
+            }
         }
     }
 }

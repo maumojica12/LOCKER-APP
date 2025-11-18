@@ -2057,7 +2057,9 @@ private static void reservation(Stage stage) {
     LockerDAO lockerDAO = new LockerDAO();
     LockerTypeDAO lockerTypeDAO = new LockerTypeDAO();
     BookingDAO bookingDAO = new BookingDAO();
-    BookingService bookingService = new BookingService(userDAO, bookingDAO, lockerDAO);
+    CancellationDAO cancellationDAO = new CancellationDAO();
+    BookingService bookingService = new BookingService(userDAO, bookingDAO, lockerDAO,cancellationDAO);
+    bookingService.processNoShowBookings(); // process no-shows before making a reservation
 
     // --- Background ---
     Image backgroundImage = new Image(AppFX.class.getResourceAsStream("reservation.jpg"));
@@ -2079,9 +2081,44 @@ private static void reservation(Stage stage) {
     userIDField.setPromptText("Enter User ID");
     userIDField.setPrefSize(FIELD_WIDTH, FIELD_HEIGHT);
 
+    ComboBox<String> monthBox = new ComboBox<>();
+    ComboBox<String> dayBox = new ComboBox<>();
+    ComboBox<String> hourBox = new ComboBox<>();
+    ComboBox<String> minuteBox = new ComboBox<>();
+    monthBox.setPromptText("MM");
+    dayBox.setPromptText("DD");
+    hourBox.setPromptText("HH");
+    minuteBox.setPromptText("MIN");
+
+    // Fill month dropdown
+    monthBox.getItems().addAll("01","02","03","04","05","06","07","08","09","10","11","12");
+    // Fill day dropdown (1-31)
+    for (int i = 1; i <= 31; i++) dayBox.getItems().add(String.format("%02d", i));
+    // Fill hour dropdown (24-hour format)
+    for (int i = 0; i < 24; i++) hourBox.getItems().add(String.format("%02d", i));
+    // Fill minute dropdown (intervals of 5 minutes)
+    for (int i = 0; i < 60; i += 5) minuteBox.getItems().add(String.format("%02d", i));
+
+    Button selectDateBtn = new Button("Select Date & Time");
+    selectDateBtn.setPrefSize(150, FIELD_HEIGHT);
+    selectDateBtn.setStyle("-fx-background-color: #003366; -fx-text-fill: white; -fx-background-radius: 8;");
+    selectDateBtn.setVisible(false);
+
+    final LocalDateTime[] selectedReservationDT = new LocalDateTime[1];
+
     Button fetchBtn = new Button("Fetch User");
     fetchBtn.setPrefSize(120, FIELD_HEIGHT);
     fetchBtn.setStyle("-fx-background-color: #003366; -fx-text-fill: white; -fx-background-radius: 8;");
+
+    HBox dateTimeBox = new HBox(10, monthBox, dayBox, hourBox, minuteBox, selectDateBtn);
+    dateTimeBox.setLayoutX(20);  
+    dateTimeBox.setLayoutY(110); 
+    monthBox.setPrefSize(70, FIELD_HEIGHT);
+    dayBox.setPrefSize(60, FIELD_HEIGHT);
+    hourBox.setPrefSize(60, FIELD_HEIGHT);
+    minuteBox.setPrefSize(70, FIELD_HEIGHT);
+    selectDateBtn.setVisible(false); 
+    dateTimeBox.setVisible(false);
 
     Label errorLabel = new Label();
     errorLabel.setStyle("-fx-text-fill: yellow; -fx-font-size: 16px; -fx-font-weight: bold;");
@@ -2096,10 +2133,18 @@ private static void reservation(Stage stage) {
     successInfoLabel.setWrapText(true);
     successInfoLabel.setVisible(false);
 
+    Label dateTimeLabel = new Label("Select Reservation Date & Time:");
+    dateTimeLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;");
+    dateTimeLabel.setVisible(false); 
+
+    Label confirmedDateLabel = new Label();
+    confirmedDateLabel.setStyle("-fx-text-fill: #00FF00; -fx-font-size: 16px; -fx-font-weight: bold;"); 
+    confirmedDateLabel.setVisible(false);
+
     // --- Left Pane ---
     AnchorPane leftPane = new AnchorPane();
     leftPane.setPrefSize(400, 600);
-    leftPane.getChildren().addAll(userIDField, fetchBtn, errorLabel, userInfoLabel, successInfoLabel);
+    leftPane.getChildren().addAll(userIDField, fetchBtn, errorLabel, userInfoLabel, successInfoLabel,dateTimeLabel,dateTimeBox,confirmedDateLabel);
     AnchorPane.setTopAnchor(userIDField, 20.0);
     AnchorPane.setLeftAnchor(userIDField, 20.0);
     AnchorPane.setTopAnchor(fetchBtn, 70.0);
@@ -2108,6 +2153,12 @@ private static void reservation(Stage stage) {
     AnchorPane.setLeftAnchor(errorLabel, 20.0);
     AnchorPane.setTopAnchor(userInfoLabel, 160.0);
     AnchorPane.setLeftAnchor(userInfoLabel, 20.0);
+    AnchorPane.setTopAnchor(confirmedDateLabel, 260.0);
+    AnchorPane.setLeftAnchor(confirmedDateLabel, 20.0);
+    AnchorPane.setTopAnchor(dateTimeLabel, 280.0); 
+    AnchorPane.setLeftAnchor(dateTimeLabel, 20.0);
+    AnchorPane.setTopAnchor(dateTimeBox, 310.0); 
+    AnchorPane.setLeftAnchor(dateTimeBox, 20.0);
     AnchorPane.setTopAnchor(successInfoLabel, 300.0);
     AnchorPane.setLeftAnchor(successInfoLabel, 20.0);
     leftPane.setLayoutX(10);
@@ -2143,6 +2194,59 @@ private static void reservation(Stage stage) {
     stage.setTitle("Make a Reservation");
     stage.show();
 
+    selectDateBtn.setOnAction(ev -> {
+    if (monthBox.getValue() == null || dayBox.getValue() == null ||
+        hourBox.getValue() == null || minuteBox.getValue() == null) {
+        errorLabel.setText("Please select Month, Day, Hour, and Minute!");
+        return;
+    }
+
+    String selectedDateStr = LocalDateTime.now().getYear() + "-" +
+                             monthBox.getValue() + "-" +
+                             dayBox.getValue() + " " +
+                             hourBox.getValue() + ":" +
+                             minuteBox.getValue() + ":00";
+
+    DateTimeFormatter dbFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    LocalDateTime selectedDate;
+
+    try {
+        selectedDate = LocalDateTime.parse(selectedDateStr, dbFormatter);
+    } catch (Exception ex) {
+        errorLabel.setText("Invalid date selection!");
+        return;
+    }
+
+    if (selectedDate.isBefore(LocalDateTime.now())) {
+        errorLabel.setText("Reservation date/time must be in the future!");
+        lockerTitle.setVisible(false);
+        lockerScroll.setVisible(false);
+        return;
+    }
+
+    // Save selected date for use in the checkBtn later
+    selectedReservationDT[0] = selectedDate;
+
+    //  Disable selection so user cannot change it
+    dateTimeLabel.setVisible(false);
+    monthBox.setVisible(false);
+    dayBox.setVisible(false);
+    hourBox.setVisible(false);
+    minuteBox.setVisible(false);
+    selectDateBtn.setVisible(false);
+
+    // Display formatted date to the user
+    DateTimeFormatter displayFormatter = DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm");
+    String prettyDate = selectedDate.format(displayFormatter);
+    confirmedDateLabel.setText("Selected Reservation: " + prettyDate);
+    confirmedDateLabel.setVisible(true);
+
+    // Show lockers
+    lockerTitle.setVisible(true);
+    lockerScroll.setVisible(true);
+    errorLabel.setText("");
+});
+
     // --- Fetch Logic ---
     fetchBtn.setOnAction(e -> {
         errorLabel.setText("");
@@ -2169,8 +2273,10 @@ private static void reservation(Stage stage) {
                     "Contact: " + (user.getUserContact() != null ? user.getUserContact() : "N/A") + "\n" +
                     "Email: " + (user.getUserEmail() != null ? user.getUserEmail() : "N/A")
                 );
+                dateTimeLabel.setVisible(true);
+                dateTimeBox.setVisible(true);
+                selectDateBtn.setVisible(true);
 
-                lockerTitle.setVisible(true);
                 successInfoLabel.setVisible(false);
 
                 VBox lockerList = new VBox(15);
@@ -2217,7 +2323,13 @@ private static void reservation(Stage stage) {
                         checkBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: green;");
                         checkBtn.setCursor(Cursor.HAND);
 
-                        checkBtn.setOnAction(ev -> {
+                       checkBtn.setOnAction(ev -> {
+                            if (selectedReservationDT[0] == null) {
+                                errorLabel.setText("Please select a reservation date first!");
+                                return;
+                            }
+
+                            LocalDateTime selectedDate = selectedReservationDT[0];  // safe, already validated
                             double fee = 0;
                             switch (lockerSize.toLowerCase()) {
                                 case "small": fee = 80; break;
@@ -2225,27 +2337,32 @@ private static void reservation(Stage stage) {
                                 case "large": fee = 180; break;
                             }
 
-                            Booking booking = bookingService.makeReservation(
+                                Booking booking = bookingService.makeReservation(
                                 currentUser[0].getUserID(),
                                 locker.getLockerID(),
-                                fee
+                                fee,
+                                selectedDate   // pass user selected date
                             );
 
                             if (booking != null) {
                                 card.setStyle("-fx-background-color: rgba(200,255,200,0.85); -fx-background-radius: 12;");
                                 checkBtn.setDisable(true);
-                                String reservationDate = booking.getReservationDate(); 
-                                String formattedDate = reservationDate; 
-                                LocalDateTime dt = LocalDateTime.parse(reservationDate); 
-                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm"); 
-                                formattedDate = dt.format(formatter);
+
+                                // Display both DB reservation date and selected date
+                                DateTimeFormatter displayFormatter = DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm");
+                                String formattedReservationDate = LocalDateTime.parse(booking.getReservationDate(), 
+                                                            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                                                            .format(displayFormatter);
+
+                                String formattedSelectedDate = selectedDate.format(displayFormatter);
 
                                 successInfoLabel.setText(
                                     "Reserved Successfully!\n" +
                                     "Locker ID: " + locker.getLockerID() + "\n" +
                                     "Locker Size: " + lockerSize + "\n" +
                                     "Reservation Fee: ₱" + fee + "\n" +
-                                    "Reservation Date: " + formattedDate + "\n" +
+                                    "Reserved on : " + formattedReservationDate + "\n" +
+                                    "Selected Reservation Date: " + formattedSelectedDate + "\n" +
                                     "Booking Status: " + booking.getBookingStatus() + "\n" +
                                     "Booking Reference: " + booking.getBookingReference()
                                 );
@@ -2263,16 +2380,18 @@ private static void reservation(Stage stage) {
                 }
 
                 lockerScroll.setContent(lockerList);
-                lockerScroll.setVisible(true);
+                lockerScroll.setVisible(false);
 
             } else {
                 errorLabel.setText("No user found with ID " + id + ".");
                 successInfoLabel.setVisible(false);
+                confirmedDateLabel.setVisible(false);
             }
 
         } catch (NumberFormatException ex) {
             errorLabel.setText("Invalid User ID format!");
             successInfoLabel.setVisible(false);
+            confirmedDateLabel.setVisible(false);
         }
     });
 
@@ -2309,7 +2428,9 @@ private static void checkIn(Stage stage) {
     LockerDAO lockerDAO = new LockerDAO();
     LockerTypeDAO lockerTypeDAO = new LockerTypeDAO();
     UserDAO userDAO = new UserDAO();
-    BookingService bookingService = new BookingService(userDAO, bookingDAO, lockerDAO);
+    CancellationDAO cancellationDAO = new CancellationDAO();
+    BookingService bookingService = new BookingService(userDAO, bookingDAO, lockerDAO,cancellationDAO);
+    bookingService.processNoShowBookings(); // process no-shows before making a reservation
 
     // --- Load all pending bookings ---
     List<Booking> pendingBookings = bookingDAO.getPendingCheckInBookings();
@@ -2350,7 +2471,8 @@ private static void checkIn(Stage stage) {
 
             Text statusText = new Text(
                     "Booking Status: " + booking.getBookingStatus() + "\n" +
-                    "Reservation Date: " + booking.getReservationDate() + "\n" +
+                    "Reservation on: " + booking.getReservationDate() + "\n" +
+                    "Selected Reservation Date: " + booking.getSelectedReservationDate() + "\n" +
                     "User ID: " + user.getUserID() + "\n" +
                     "User Name: " + user.getFirstName() + " " + user.getLastName() + "\n" +
                     "Locker ID: " + locker.getLockerID() + " [" + lockerSize + "]"
@@ -2419,6 +2541,7 @@ private static void checkIn(Stage stage) {
     stage.setTitle("Check-In Customer");
     stage.show();
 }
+
 
 private static void viewAllActiveBookings(Stage stage) {
     // --- Background setup ---
@@ -2738,6 +2861,8 @@ private static void viewAllCancellations(Stage stage) {
         LockerDAO lockerDAO = new LockerDAO();
         UserDAO userDAO = new UserDAO();
         CancellationDAO cancellationDAO = new CancellationDAO();
+        BookingService bookingService = new BookingService(userDAO, bookingDAO, lockerDAO,cancellationDAO);
+        bookingService.processNoShowBookings(); // to reload updated avail lockers from no show customer
 
         List<Booking> pendingBookings = bookingDAO.getPendingCheckInBookings();
 
@@ -2850,8 +2975,6 @@ private static void viewAllCancellations(Stage stage) {
         stage.setTitle("Cancel Reservation");
         stage.show();
     }
-
-
 
      private static void handlePayments(Stage stage) {
         stage.setTitle("Luggage Locker Booking System - Payment and Release Management");

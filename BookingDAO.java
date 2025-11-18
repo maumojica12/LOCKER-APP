@@ -6,7 +6,7 @@ public class BookingDAO {
 
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/luggage_locker_db";
     private static final String USER = "root";
-    private static final String PASSWORD = "22757205";
+    private static final String PASSWORD = "IwillSuccess12:)";
 
     // --- Generate unique booking reference in format BKG-0001 ---
     public String generateBookingReference() {
@@ -27,8 +27,7 @@ public class BookingDAO {
 
         int newNumber = 1; // default if no bookings exist
         if (lastRef != null) {
-            // Extract number from "BKG-0003" -> 3
-            String numberPart = lastRef.substring(4);
+            String numberPart = lastRef.substring(4); // Extract number from "BKG-0003" -> 3
             try {
                 newNumber = Integer.parseInt(numberPart) + 1;
             } catch (NumberFormatException e) {
@@ -39,30 +38,32 @@ public class BookingDAO {
         return String.format("BKG-%04d", newNumber);
     }
 
-    // --- Add new booking ---
     public boolean addBooking(Booking booking) {
-        String newRef = generateBookingReference();
-        booking.setBookingReference(newRef);
+    String sql = "INSERT INTO Booking (bookingReference, userID, lockerID, reservationFee, reservationDate, selectedReservationDate, bookingStatus) " +
+                 "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-        String sql = "INSERT INTO Booking (bookingReference, userID, lockerID, reservationFee, reservationDate, bookingStatus, checkInTime, checkOutTime) "
-                   + "VALUES (?, ?, ?, ?, NOW(), ?, NULL, NULL)";
+    try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        // Set parameters
+        stmt.setString(1, booking.getBookingReference());   // set generated bookingRef
+        stmt.setInt(2, booking.getUserID());
+        stmt.setInt(3, booking.getLockerID());
+        stmt.setDouble(4, booking.getReservationFee());
+        stmt.setString(5, booking.getReservationDate());
+        stmt.setString(6, booking.getSelectedReservationDate());
+        stmt.setString(7, booking.getBookingStatus());
 
-            ps.setString(1, booking.getBookingReference()); // String now
-            ps.setInt(2, booking.getUserID());
-            ps.setInt(3, booking.getLockerID());
-            ps.setDouble(4, booking.getReservationFee());
-            ps.setString(5, booking.getBookingStatus());
+        // Execute INSERT
+        int rows = stmt.executeUpdate();
 
-            return ps.executeUpdate() > 0;
+        return rows > 0;
 
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
+    } catch (SQLException e) {
+        e.printStackTrace();
+        return false;
     }
+}
 
     // --- Update booking status and times ---
     public boolean updateBooking(Booking booking) {
@@ -102,6 +103,7 @@ public class BookingDAO {
                         rs.getInt("lockerID"),
                         rs.getDouble("reservationFee"),
                         rs.getString("reservationDate"),
+                        rs.getString("selectedReservationDate"),
                         rs.getString("bookingStatus"),
                         rs.getString("checkInTime"),
                         rs.getString("checkOutTime")
@@ -131,6 +133,7 @@ public class BookingDAO {
                 rs.getInt("lockerID"),
                 rs.getDouble("reservationFee"),
                 rs.getString("reservationDate"),
+                rs.getString("selectedReservationDate"),
                 rs.getString("bookingStatus"),
                 rs.getString("checkInTime"),
                 rs.getString("checkOutTime")
@@ -161,6 +164,7 @@ public List<Booking> getCheckedInBookings() {
                 rs.getInt("lockerID"),
                 rs.getDouble("reservationFee"),
                 rs.getString("reservationDate"),
+                rs.getString("selectedReservationDate"),
                 rs.getString("bookingStatus"),
                 rs.getString("checkInTime"),
                 rs.getString("checkOutTime")
