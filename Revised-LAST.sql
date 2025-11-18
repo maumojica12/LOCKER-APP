@@ -34,7 +34,7 @@ CREATE TABLE Locker(
 		lockerID INT AUTO_INCREMENT PRIMARY KEY,
 		lockerTypeID INT NOT NULL,
 		locationID INT NOT NULL,
-		locationPostalCode VARCHAR(10),
+		locationPostalCode INT NOT NULL,
 		lockerStatus ENUM('Available','Reserved','Occupied') DEFAULT 'Available',
 		FOREIGN KEY (lockerTypeID) REFERENCES LockerType(lockerTypeID),
 		FOREIGN KEY (locationID) REFERENCES Location(locationID)
@@ -200,7 +200,7 @@ VALUES
 ('BKG-0002', 2, 2, 120.00, '2025-05-19 08:00:00', '2025-05-19 13:30:00', 'Pending Check-in', NULL, NULL),
 ('BKG-0003', 3, 3, 180.00, '2025-05-19 09:30:00', '2025-05-19 15:00:00', 'Cancelled', NULL, NULL),
 ('BKG-0004', 4, 4, 80.00,  '2025-04-16 05:46:16', '2025-04-16 10:50:16', 'Checked-Out', '2025-04-16 07:56:16', '2025-04-16 08:46:16'),
-('BKG-0005', 5, 5, 120.00, '2025-05-18 12:00:00', '2025-05-18 17:30:00', 'Checked-In', '2025-05-18 15:00:00', NULL),
+('BKG-0005', 5, 5, 120.00, '2025-11-18 12:00:00', '2025-11-18 17:30:00', 'Checked-In', '2025-11-18 17:00:00', NULL),
 ('BKG-0006', 6, 6, 120.00, '2025-05-18 10:00:00', '2025-05-18 15:15:00', 'Pending Check-in', NULL, NULL),
 ('BKG-0007', 7, 7, 180.00, '2025-05-18 07:00:00', '2025-05-18 12:30:00', 'Cancelled', NULL, NULL),
 ('BKG-0008', 8, 8, 180.00, '2025-05-14 23:50:49', '2025-05-15 05:00:49', 'Checked-Out', '2025-05-15 01:50:49', '2025-05-15 02:44:49'),
@@ -213,7 +213,7 @@ VALUES
 ('BKG-0014', 4, 4, 80.00, '2025-05-13 07:30:00', '2025-05-13 12:45:00', 'Checked-Out', '2025-05-13 08:30:00', '2025-05-13 09:30:00'),
 ('BKG-0015', 5, 5, 120.00, '2025-05-12 09:00:00', '2025-05-12 14:30:00', 'Pending Check-in', NULL, NULL),
 ('BKG-0016', 6, 6, 180.00, '2025-05-10 10:00:00', '2025-05-10 15:30:00', 'Checked-Out', '2025-05-10 11:00:00', '2025-05-10 12:00:00'),
-('BKG-0017', 7, 7, 80.00, '2025-05-05 08:00:00', '2025-05-05 13:15:00', 'Checked-In', '2025-05-05 09:00:00', NULL),
+('BKG-0017', 7, 7, 80.00, '2025-11-18 08:00:00', '2025-11-18 13:15:00', 'Checked-In', '2025-11-18 13:00:00', NULL),
 ('BKG-0018', 8, 8, 120.00, '2025-04-30 12:00:00', '2025-04-30 17:30:00', 'Cancelled', NULL, NULL),
 ('BKG-0019', 9, 9, 180.00, '2025-04-25 11:00:00', '2025-04-25 16:30:00', 'Checked-Out', '2025-04-25 12:00:00', '2025-04-25 13:00:00'),
 ('BKG-0020', 10, 10, 80.00, '2025-04-20 10:00:00', '2025-04-20 15:30:00', 'Pending Check-in', NULL, NULL);
@@ -236,7 +236,7 @@ INSERT INTO Cancellation (bookingReference, cancelDate, reason, refundFee) VALUE
 
 -- Locker Transfer
 INSERT INTO LockerTransfer (bookingReference, transferDate, adjustmentAmount, oldLockerID, newLockerID) VALUES
-('BKG-0005', DATE_ADD(DATE_SUB(NOW(), INTERVAL 3 HOUR), INTERVAL 1 HOUR), 20.00, 5, 6);
+('BKG-0005', '2025-11-18 19:10:00' , 80.00, 5, 7);
 
 SELECT * FROM User;
 SELECT * FROM LockerType;
