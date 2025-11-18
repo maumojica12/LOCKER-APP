@@ -1,5 +1,7 @@
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.scene.text.Text;
@@ -43,6 +45,8 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import java.time.LocalDate;
+import java.util.List;
+import javafx.scene.control.ComboBox;
 import java.util.List;
 
 public class AppFX extends Application {
@@ -1796,401 +1800,189 @@ private static void handleManageLocations(Stage stage) {
         });
     }
 
+private static void handleManageLockers(Stage stage) {
+        stage.setTitle("Luggage Locker Booking System - Locker Management");
 
-    private static void handleManageLockers(Stage stage) {
+        Image lockerMenu = new Image(AppFX.class.getResourceAsStream("lockerMenu.jpg"));
+        ImageView backgroundView = new ImageView(lockerMenu);
 
-        StackPane root = new StackPane();
+        String[] menuLabels = {
+                "VIEW ALL LOCKERS",
+                "VIEW AVAILABLE LOCKERS",
+                "VIEW OCCUPIED LOCKERS",
+                "RETURN TO MAIN MENU"
+        };
+
+        VBox leftMenu = lockerMenuButton(menuLabels, 0, 2, stage);
+        VBox rightMenu = lockerMenuButton(menuLabels, 2, 4, stage);
+
+        StackPane root = new StackPane(backgroundView, leftMenu, rightMenu);
+        StackPane.setAlignment(leftMenu, Pos.CENTER_LEFT);
+        StackPane.setAlignment(rightMenu, Pos.CENTER_RIGHT);
+
         Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
 
-        ImageView bg = new ImageView(new Image(AppFX.class.getResourceAsStream("lockerMenu.jpg")));
-        bg.fitWidthProperty().bind(scene.widthProperty());
-        bg.fitHeightProperty().bind(scene.heightProperty());
-        bg.setPreserveRatio(false);
+        backgroundView.fitWidthProperty().bind(scene.widthProperty());
+        backgroundView.fitHeightProperty().bind(scene.heightProperty());
+        backgroundView.setPreserveRatio(false);
 
-        VBox container = new VBox(20);
-        container.setPadding(new Insets(220, 40, 40, 40));
-        container.setAlignment(Pos.TOP_CENTER);
+        stage.setScene(scene);
+        stage.show();
+    }
 
-        Label title = new Label("Locker Records Management");
-        title.setFont(Font.font("Arial", FontWeight.BOLD, 26));
-        title.setTextFill(Color.WHITE);
+private static VBox lockerMenuButton(String[] labels, int start, int end, Stage stage) {
 
-        ScrollPane scroll = new ScrollPane();
-        scroll.setFitToWidth(true);
-        scroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
-        scroll.setPrefViewportHeight(420);
+    VBox menu = new VBox(20);
+    menu.setPadding(new Insets(450, 320, 320, 320));
+    menu.setMaxWidth(VBox.USE_PREF_SIZE);
 
-        VBox list = new VBox(12);
-        list.setPadding(new Insets(10));
-        list.setAlignment(Pos.TOP_CENTER);
+    for (int i = start; i < end; i++) {
+        if (i >= labels.length) break;
 
-        LockerDAO dao = new LockerDAO();
-        List<Locker> lockers = dao.getAllLockers();
+        String label = labels[i];
+        Button btn = new Button(label);
+
+        btn.setMinWidth(BUTTON_WIDTH);
+        btn.setMinHeight(BUTTON_HEIGHT);
+        btn.setMaxWidth(BUTTON_WIDTH);
+        btn.setAlignment(Pos.CENTER);
+        btn.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;");
+
+        switch (label) {
+
+            case "VIEW ALL LOCKERS" ->
+                    btn.setOnAction(e -> viewLockers(stage, "all"));
+
+            case "VIEW AVAILABLE LOCKERS" ->
+                    btn.setOnAction(e -> viewLockers(stage, "available"));
+
+            case "VIEW OCCUPIED LOCKERS" ->
+                    btn.setOnAction(e -> viewLockers(stage, "occupied"));
+
+            case "RETURN TO MAIN MENU" ->
+                    btn.setOnAction(e -> new AppFX().start(stage));
+        }
+
+        menu.getChildren().add(btn);
+    }
+
+    return menu;
+}
+
+
+private static void viewLockers(Stage stage, String filter) {
+    StackPane root = new StackPane();
+    Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+
+    // --- Choose background image ---
+    String bgImageName = switch (filter.toLowerCase()) {
+        case "available" -> "viewAvailableLockers.jpg";
+        case "occupied"  -> "viewOccupiedLockers.jpg";
+        default -> "viewAllLockers.jpg";
+    };
+
+    ImageView bg = new ImageView(new Image(AppFX.class.getResourceAsStream(bgImageName)));
+    bg.fitWidthProperty().bind(scene.widthProperty());
+    bg.fitHeightProperty().bind(scene.heightProperty());
+    bg.setPreserveRatio(false);
+    root.getChildren().add(bg);
+
+    // --- Scrollable List ---
+    ScrollPane scrollPane = new ScrollPane();
+    scrollPane.setFitToWidth(true);
+    scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+    scrollPane.setPrefViewportHeight(500);
+
+    VBox lockerList = new VBox(15);
+    lockerList.setPadding(new Insets(10));
+    lockerList.setAlignment(Pos.TOP_CENTER);
+
+    // --- Load lockers based on filter ---
+    LockerDAO lockerDAO = new LockerDAO();
+    List<Locker> lockers;
+
+    try {
+        lockers = switch (filter.toLowerCase()) {
+            case "available" -> lockerDAO.getAvailableLocker();
+            case "occupied" -> lockerDAO.getOccupiedLocker();
+            default -> lockerDAO.getAllLockers();
+        };
 
         if (lockers.isEmpty()) {
-            Label none = new Label("No lockers found.");
-            none.setFont(Font.font("Arial", FontWeight.BOLD, 18));
-            none.setTextFill(Color.WHITE);
-            list.getChildren().add(none);
-        } else {
-            for (Locker l : lockers) {
-
-                HBox row = new HBox(12);
-                row.setPadding(new Insets(12));
-                row.setAlignment(Pos.CENTER_LEFT);
-                row.setPrefWidth(900);
-                row.setStyle("""
+            Label noLocker = new Label("No lockers found.");
+            noLocker.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+            noLocker.setTextFill(Color.WHITE);
+            lockerList.getChildren().add(noLocker);
+        }
+        else {
+            for (Locker locker : lockers) {
+                VBox card = new VBox(5);
+                card.setPadding(new Insets(15));
+                card.setPrefWidth(900);
+                card.setStyle("""
                 -fx-background-color: rgba(255,255,255,0.85);
                 -fx-background-radius: 12;
                 -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.25), 10, 0, 0, 5);
             """);
 
-                Label info = new Label(
-                        "ID: " + l.getLockerID() +
-                                " | Type: " + l.getLockerTypeID() +
-                                " | Location: " + l.getLocationID() +
-                                " | Postal: " + l.getLocationPostalCode() +
-                                " | Status: " + l.getLockerStatus()
-                );
-                info.setFont(Font.font("Arial", 14));
-                info.setTextFill(Color.BLACK);
+                Label id = new Label("Locker ID: " + locker.getLockerID());
+                Label type = new Label("Locker Type ID: " + locker.getLockerTypeID());
+                Label loc = new Label("Location ID: " + locker.getLocationID());
+                Label postal = new Label("Postal Code: " + locker.getLocationPostalCode());
+                Label status = new Label("Status: " + locker.getLockerStatus());
 
-                Region spacer = new Region();
-                HBox.setHgrow(spacer, Priority.ALWAYS);
+                id.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+                status.setFont(Font.font("Arial", FontWeight.BOLD, 14));
 
-                Button editBtn = new Button("Edit");
-                editBtn.setStyle("-fx-background-color:#007bff; -fx-text-fill:white;");
-                editBtn.setOnAction(e -> editLocker(stage, l.getLockerID()));
-
-                Button delBtn = new Button("Delete");
-                delBtn.setStyle("-fx-background-color:#d9534f; -fx-text-fill:white;");
-                delBtn.setOnAction(e -> {
-                    Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
-                            "Delete Locker ID: " + l.getLockerID() + "?");
-                    if (confirm.showAndWait().get() == ButtonType.OK) {
-                        if (dao.deleteLocker(l.getLockerID())) {
-                            handleManageLockers(stage);  // refresh
+                status.setTextFill(
+                        switch (locker.getLockerStatus().toLowerCase()) {
+                            case "available" -> Color.GREEN;
+                            case "occupied" -> Color.RED;
+                            case "reserved" -> Color.BLUE;
+                            default -> Color.ORANGE;
                         }
-                    }
-                });
+                );
 
-                row.getChildren().addAll(info, spacer, editBtn, delBtn);
-                list.getChildren().add(row);
+                for (Label l : List.of(id, type, loc, postal)) {
+                    l.setTextFill(Color.BLACK);
+                }
+
+                card.getChildren().addAll(id, type, loc, postal, status);
+                lockerList.getChildren().add(card);
             }
         }
-
-        scroll.setContent(list);
-
-        Button addBtn = new Button("Add Locker");
-        addBtn.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-        addBtn.setStyle("-fx-background-color:#28a745; -fx-text-fill:white;");
-        addBtn.setOnAction(e -> addLocker(stage));
-
-        Button back = new Button("Back");
-        back.setStyle("-fx-background-color:#003366; -fx-text-fill:white;");
-        back.setOnAction(e -> new AppFX().start(stage));
-
-        container.getChildren().addAll(title, scroll, addBtn, back);
-
-        root.getChildren().addAll(bg, container);
-        stage.setScene(scene);
-        stage.show();
+    } catch (Exception e) {
+        e.printStackTrace();
     }
 
-    private static void addLocker(Stage stage) {
+    scrollPane.setContent(lockerList);
 
-        // --- Background Image ---
-        Image bgImage = new Image(AppFX.class.getResourceAsStream("lockerMenu.jpg"));
-        ImageView bgView = new ImageView(bgImage);
-        bgView.setPreserveRatio(false);
+    // --- Back Button ---
+    Button backBtn = new Button("Return to Locker Menu");
+    backBtn.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+    backBtn.setStyle("-fx-background-color:#003366; -fx-text-fill:white; -fx-background-radius:8;");
+    backBtn.setPrefSize(220, 40);
+    backBtn.setOnAction(e -> handleManageLockers(stage));
 
-        StackPane root = new StackPane();
-        Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+    // --- Layout ---
+    VBox content = new VBox(30, scrollPane, backBtn);
+    content.setAlignment(Pos.TOP_CENTER);
+    content.setPadding(new Insets(230, 20, 40, 20));
 
-        bgView.fitWidthProperty().bind(scene.widthProperty());
-        bgView.fitHeightProperty().bind(scene.heightProperty());
-        root.getChildren().add(bgView);
+    root.getChildren().add(content);
+    StackPane.setAlignment(content, Pos.TOP_CENTER);
 
-        VBox panel = new VBox(15);
-        panel.setAlignment(Pos.CENTER);
-        panel.setPadding(new Insets(35));
-        panel.setPrefWidth(500);
+    stage.setScene(scene);
+    stage.setTitle("Locker Management - " + filter.substring(0, 1).toUpperCase() + filter.substring(1));
+    stage.show();
+}
 
-        panel.setStyle("""
-        -fx-background-color: rgba(255,255,255,0.90);
-        -fx-background-radius: 15;
-        -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.25), 12, 0, 0, 4);
-    """);
 
-        Label title = new Label("Add New Locker");
-        title.setFont(Font.font("Arial", FontWeight.BOLD, 28));
-        title.setTextFill(Color.BLACK);
+private static void handleManageLockerLocations(){
 
-        String fieldStyle = """
-        -fx-font-size: 16px;
-        -fx-background-radius: 8;
-        -fx-padding: 10;
-        -fx-border-color: #aaaaaa;
-        -fx-border-radius: 8;
-    """;
-
-        TextField typeField = new TextField();
-        typeField.setPromptText("Locker Type ID");
-        typeField.setPrefHeight(45);
-        typeField.setStyle(fieldStyle);
-
-        TextField locationField = new TextField();
-        locationField.setPromptText("Location ID");
-        locationField.setPrefHeight(45);
-        locationField.setStyle(fieldStyle);
-
-        TextField postalField = new TextField();
-        postalField.setPromptText("Postal Code");
-        postalField.setPrefHeight(45);
-        postalField.setStyle(fieldStyle);
-
-        Label errorLabel = new Label();
-        errorLabel.setTextFill(Color.RED);
-        errorLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
-
-        Button saveButton = new Button("Save Locker");
-        saveButton.setPrefSize(200, 45);
-        saveButton.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-        saveButton.setStyle("-fx-background-color:#28a745; -fx-text-fill:white; -fx-background-radius:10;");
-
-        saveButton.setOnAction(e -> {
-
-            errorLabel.setText(""); // Clear errors
-
-            String typeText = typeField.getText().trim();
-            String locText = locationField.getText().trim();
-            String postalText = postalField.getText().trim();
-
-            boolean valid = true;
-
-            // ---- Validation for typeField ----
-            if (typeText.isEmpty()) {
-                errorLabel.setText("Locker Type ID cannot be empty.");
-                typeField.setStyle(fieldStyle + "; -fx-border-color:red; -fx-border-width:2;");
-                valid = false;
-            } else if (!typeText.matches("\\d+")) {
-                errorLabel.setText("Locker Type ID must be numeric.");
-                typeField.setStyle(fieldStyle + "; -fx-border-color:red; -fx-border-width:2;");
-                valid = false;
-            } else {
-                typeField.setStyle(fieldStyle);
-            }
-
-            // ---- Validation for locationField ----
-            if (locText.isEmpty()) {
-                errorLabel.setText("Location ID cannot be empty.");
-                locationField.setStyle(fieldStyle + "; -fx-border-color:red; -fx-border-width:2;");
-                valid = false;
-            } else if (!locText.matches("\\d+")) {
-                errorLabel.setText("Location ID must be numeric.");
-                locationField.setStyle(fieldStyle + "; -fx-border-color:red; -fx-border-width:2;");
-                valid = false;
-            } else {
-                locationField.setStyle(fieldStyle);
-            }
-
-            // ---- Validation for postalField ----
-            if (postalText.isEmpty()) {
-                errorLabel.setText("Postal Code cannot be empty.");
-                postalField.setStyle(fieldStyle + "; -fx-border-color:red; -fx-border-width:2;");
-                valid = false;
-            } else if (!postalText.matches("\\d+")) {
-                errorLabel.setText("Postal Code must be numeric.");
-                postalField.setStyle(fieldStyle + "; -fx-border-color:red; -fx-border-width:2;");
-                valid = false;
-            } else {
-                postalField.setStyle(fieldStyle);
-            }
-
-            if (!valid) return;
-
-            int lockerTypeID = Integer.parseInt(typeText);
-            int locationID = Integer.parseInt(locText);
-            int postalCode = Integer.parseInt(postalText);
-
-            Locker newLocker = new Locker(lockerTypeID, locationID, postalCode);
-
-            LockerDAO lockerDAO = new LockerDAO();
-            if (lockerDAO.addLocker(newLocker)) {
-                handleManageLockers(stage);
-            } else {
-                errorLabel.setText("Failed to add locker. Please check your inputs.");
-            }
-        });
-
-        Button backButton = new Button("Back");
-        backButton.setPrefSize(200, 40);
-        backButton.setFont(Font.font("Arial", FontWeight.BOLD, 14));
-        backButton.setStyle("-fx-background-color:#b30000; -fx-text-fill:white; -fx-background-radius:10;");
-        backButton.setOnAction(e -> handleManageLockers(stage));
-
-        panel.getChildren().addAll(title, typeField, locationField, postalField,
-                errorLabel, saveButton, backButton);
-
-        root.getChildren().add(panel);
-        StackPane.setAlignment(panel, Pos.CENTER);
-
-        stage.setScene(scene);
-        stage.setTitle("Add Locker");
-        stage.show();
     }
 
-    private static void editLocker(Stage stage, int lockerID) {
-
-        LockerDAO lockerDAO = new LockerDAO();
-        Locker locker = lockerDAO.getLockerByID(lockerID);
-
-        Image bgImage = new Image(AppFX.class.getResourceAsStream("lockerMenu.jpg"));
-        ImageView bgView = new ImageView(bgImage);
-        bgView.setPreserveRatio(false);
-
-        StackPane root = new StackPane();
-        Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
-
-        bgView.fitWidthProperty().bind(scene.widthProperty());
-        bgView.fitHeightProperty().bind(scene.heightProperty());
-        root.getChildren().add(bgView);
-
-        VBox card = new VBox(15);
-        card.setAlignment(Pos.CENTER);
-        card.setPadding(new Insets(40));
-        card.setPrefWidth(520);
-
-        card.setStyle("""
-        -fx-background-color: rgba(255,255,255,0.92);
-        -fx-background-radius: 15;
-        -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.25), 12, 0, 0, 4);
-    """);
-
-        Label title = new Label("Edit Locker");
-        title.setFont(Font.font("Arial", FontWeight.BOLD, 30));
-
-        String tfStyle = """
-        -fx-font-size: 16px;
-        -fx-background-radius: 8;
-        -fx-border-radius: 8;
-        -fx-padding: 10;
-        -fx-border-color: #aaaaaa;
-    """;
-
-        TextField typeField = new TextField(String.valueOf(locker.getLockerTypeID()));
-        typeField.setPromptText("Locker Type ID");
-        typeField.setPrefSize(500, 50);
-        typeField.setStyle(tfStyle);
-
-        TextField locationField = new TextField(String.valueOf(locker.getLocationID()));
-        locationField.setPromptText("Location ID");
-        locationField.setPrefSize(500, 50);
-        locationField.setStyle(tfStyle);
-
-        TextField postalField = new TextField(String.valueOf(locker.getLocationPostalCode()));
-        postalField.setPromptText("Postal Code");
-        postalField.setPrefSize(500, 50);
-        postalField.setStyle(tfStyle);
-
-        ComboBox<String> statusCombo = new ComboBox<>();
-        statusCombo.getItems().addAll("Available", "Occupied", "Reserved");
-        statusCombo.setValue(locker.getLockerStatus());
-        statusCombo.setPrefHeight(50);
-        statusCombo.setPrefWidth(500);
-        statusCombo.setStyle("-fx-font-size: 16px; -fx-background-radius: 8;");
-
-        Label errorLabel = new Label();
-        errorLabel.setTextFill(Color.RED);
-        errorLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
-
-        Button updateButton = new Button("Update Locker");
-        updateButton.setPrefSize(220, 45);
-        updateButton.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-        updateButton.setStyle("-fx-background-color:#007bff; -fx-text-fill:white; -fx-background-radius:10;");
-
-        updateButton.setOnAction(e -> {
-
-            errorLabel.setText("");
-
-            String typeText = typeField.getText().trim();
-            String locText = locationField.getText().trim();
-            String postalText = postalField.getText().trim();
-
-            boolean valid = true;
-
-            // Validate type
-            if (typeText.isEmpty()) {
-                errorLabel.setText("Locker Type ID cannot be empty.");
-                typeField.setStyle(tfStyle + "; -fx-border-color:red; -fx-border-width:2;");
-                valid = false;
-            } else if (!typeText.matches("\\d+")) {
-                errorLabel.setText("Locker Type ID must be numeric.");
-                typeField.setStyle(tfStyle + "; -fx-border-color:red; -fx-border-width:2;");
-                valid = false;
-            } else {
-                typeField.setStyle(tfStyle);
-            }
-
-            // Validate location
-            if (locText.isEmpty()) {
-                errorLabel.setText("Location ID cannot be empty.");
-                locationField.setStyle(tfStyle + "; -fx-border-color:red; -fx-border-width:2;");
-                valid = false;
-            } else if (!locText.matches("\\d+")) {
-                errorLabel.setText("Location ID must be numeric.");
-                locationField.setStyle(tfStyle + "; -fx-border-color:red; -fx-border-width:2;");
-                valid = false;
-            } else {
-                locationField.setStyle(tfStyle);
-            }
-
-            // Validate postal
-            if (postalText.isEmpty()) {
-                errorLabel.setText("Postal Code cannot be empty.");
-                postalField.setStyle(tfStyle + "; -fx-border-color:red; -fx-border-width:2;");
-                valid = false;
-            } else if (!postalText.matches("\\d+")) {
-                errorLabel.setText("Postal Code must be numeric.");
-                postalField.setStyle(tfStyle + "; -fx-border-color:red; -fx-border-width:2;");
-                valid = false;
-            } else {
-                postalField.setStyle(tfStyle);
-            }
-
-            if (!valid) return;
-
-            locker.setLockerTypeID(Integer.parseInt(typeText));
-            locker.setLocationID(Integer.parseInt(locText));
-            locker.setLocationPostalCode(Integer.parseInt(postalText));
-            locker.setLockerStatus(statusCombo.getValue());
-
-            if (lockerDAO.updateLocker(locker)) {
-                handleManageLockers(stage);
-            } else {
-                errorLabel.setText("Failed to update locker. Please try again.");
-            }
-        });
-
-        Button backButton = new Button("Back");
-        backButton.setPrefSize(220, 40);
-        backButton.setFont(Font.font("Arial", FontWeight.BOLD, 14));
-        backButton.setStyle("-fx-background-color:#b30000; -fx-text-fill:white; -fx-background-radius:10;");
-        backButton.setOnAction(e -> handleManageLockers(stage));
-
-        card.getChildren().addAll(title, typeField, locationField, postalField, statusCombo, errorLabel,
-                updateButton, backButton);
-
-        root.getChildren().add(card);
-        StackPane.setAlignment(card, Pos.CENTER);
-
-        stage.setScene(scene);
-        stage.setTitle("Edit Locker");
-        stage.show();
-    }
-
-
-    private static void handleBooking(Stage stage) {
+private static void handleBooking(Stage stage) {
     stage.setTitle("Luggage Locker Booking System - Reservation/Booking Management");
 
     // --- Background ---
@@ -3414,10 +3206,22 @@ private static void viewAllCancellations(Stage stage) {
                                 "-fx-background-radius: 12; " +
                                 "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.25), 10, 0, 0, 5);"
                 );
-
+                /*
                 // --- Fetch user and locker info ---
                 User user = userDAO.getUserById(booking.getUserID());
                 Locker locker = lockerDAO.getLockerByID(booking.getLockerID());
+                LockerType lockerType = lockerTypeDAO.getLockerTypeByID(locker.getLockerTypeID());
+                String lockerSize = lockerType != null ? lockerType.getLockerTypeSize() : "Unknown";
+                */
+
+                // --- Fetch user info ---
+                User user = userDAO.getUserById(booking.getUserID());
+
+                // --- Determine latest locker (consider transfers) ---
+                LockerTransfer latestTransfer = LockerTransferDAO.getLatestTransferForBooking(booking.getBookingReference());
+                int displayLockerID = (latestTransfer != null) ? latestTransfer.getNewLockerID() : booking.getLockerID();
+                Locker locker = lockerDAO.getLockerByID(displayLockerID);
+
                 LockerType lockerType = lockerTypeDAO.getLockerTypeByID(locker.getLockerTypeID());
                 String lockerSize = lockerType != null ? lockerType.getLockerTypeSize() : "Unknown";
 
@@ -3455,44 +3259,76 @@ private static void viewAllCancellations(Stage stage) {
 
                 processBtn.setOnAction(e -> {
                     String selectedMethod = paymentMethodCombo.getValue();
-                    LocalDateTime paymentTime = LocalDateTime.now(); // this is both checkout & payment time
-
-                    // --- Update booking checkout time and status ---
-                    booking.setCheckOutTime(paymentTime.format(Booking.FORMATTER));
+                    // --- Determine checkout time ---
+                    LocalDateTime checkoutTime = LocalDateTime.now(); // current time at payment
+                    booking.setCheckOutTime(checkoutTime.format(Booking.FORMATTER));
                     booking.setBookingStatus("Checked-out");
                     bookingDAO.updateBooking(booking);
 
-                    // --- Update locker status ---
-                    locker.setLockerStatus("Available");
-                    lockerDAO.updateLockerStatus(locker.getLockerID(), "Available");
-                    /*
-                    // --- Calculate total fee using paymentTime as checkout ---
-                    double hours = booking.calculateDurationHours(); // rounded up
-                    double rate = lockerType != null ? lockerType.getLockerRate() : 0;
-                    double totalFee = (hours * rate) - booking.getReservationFee();
-                    if (totalFee < 0) totalFee = 0;
-                    */
-                    // --- Calculate total fee using paymentTime as checkout ---
-                    double hours = booking.calculateDurationHours(); // already rounded up
-                    double rate = lockerType != null ? lockerType.getLockerRate() : 0;
-                    double totalUsageFee = hours * rate; // no extra ceil
-                    double remainingFee = totalUsageFee - booking.getReservationFee();
-                    if (remainingFee < 0) remainingFee = 0;
-                    double totalFee = booking.getReservationFee() + remainingFee;
+                    // --- Fetch all transfers for this booking ---
+                    List<LockerTransfer> transfers = LockerTransferDAO.getAllTransfersForBooking(booking.getBookingReference());
+
+                    // --- Build locker usage segments ---
+                    List<LockerSegment> segments = new ArrayList<>();
+                    LocalDateTime segmentStart = LocalDateTime.parse(booking.getCheckInTime(), Booking.FORMATTER);
+
+                    // Process each transfer
+                    for (LockerTransfer transfer : transfers) {
+                        Locker oldLocker = lockerDAO.getLockerByID(transfer.getOldLockerID());
+                        LockerType oldLockerType = lockerTypeDAO.getLockerTypeByID(oldLocker.getLockerTypeID());
+                        LocalDateTime transferTime = transfer.getTransferDate();
+
+                        // Compute hours, rounding up any partial hour
+                        long minutes = ChronoUnit.MINUTES.between(segmentStart, transferTime);
+                        long hours = (long) Math.ceil(minutes / 60.0);
+                        if (hours <= 0) hours = 1; // minimum 1 hour
+
+                        segments.add(new LockerSegment(oldLocker, oldLockerType, hours, transfer.getAdjustmentAmount()));
+                        segmentStart = transferTime;
+                    }
+
+                    // Add final segment from last transfer (or initial locker if no transfers) to checkout
+                    int lastLockerID = transfers.isEmpty() ? booking.getLockerID() : transfers.get(transfers.size() - 1).getNewLockerID();
+                    Locker lastLocker = lockerDAO.getLockerByID(lastLockerID);
+                    LockerType lastLockerType = lockerTypeDAO.getLockerTypeByID(lastLocker.getLockerTypeID());
+
+                    long minutesFinal = ChronoUnit.MINUTES.between(segmentStart, checkoutTime);
+                    long finalHours = (long) Math.ceil(minutesFinal / 60.0);
+                    if (finalHours <= 0) finalHours = 1;
+
+                    segments.add(new LockerSegment(lastLocker, lastLockerType, finalHours, 0));
+
+
+                    // --- Calculate total fee ---
+                    double totalFee = 0;
+                    for (LockerSegment segment : segments) {
+                        double rate = segment.getLockerType() != null ? segment.getLockerType().getLockerRate() : 0;
+                        double usageFee = segment.getHours() * rate;
+                        double segmentTotal = usageFee + segment.getAdjustmentAmount(); // add adjustment here
+                        totalFee += segmentTotal;
+                    }
+
+                    // Ensure reservation fee is counted only once if included separately
+                    totalFee = Math.max(totalFee, booking.getReservationFee());
 
                     // --- Insert payment ---
-                    // Create Payment object (paymentID can be 0 as placeholder)
                     Payment payment = new Payment(
                             0,
                             booking.getBookingReference(),
                             booking.getUserID(),
                             totalFee,
-                            paymentMethodCombo.getValue(),
+                            selectedMethod,
                             "Paid",
-                            Timestamp.valueOf(paymentTime)
+                            Timestamp.valueOf(checkoutTime)
                     );
 
-                    payment = paymentDAO.addPayment(payment); // paymentID is now set
+                    payment = paymentDAO.addPayment(payment);
+
+                    // --- Update locker status ---
+                    for (LockerSegment segment : segments) {
+                        segment.getLocker().setLockerStatus("Available");
+                        lockerDAO.updateLockerStatus(segment.getLocker().getLockerID(), "Available");
+                    }
 
                     // Generate receipt
                     releaseLockerReceiptPage(payment);
@@ -3547,46 +3383,76 @@ private static void viewAllCancellations(Stage stage) {
         LockerDAO lockerDAO = new LockerDAO();
         LockerTypeDAO lockerTypeDAO = new LockerTypeDAO();
         UserDAO userDAO = new UserDAO();
+        LockerTransferDAO transferDAO = new LockerTransferDAO();
 
         Booking booking = bookingDAO.getBookingByReference(payment.getBookingReference());
         User user = userDAO.getUserById(payment.getUserID());
-        Locker locker = lockerDAO.getLockerByID(booking.getLockerID());
-        LockerType lockerType = lockerTypeDAO.getLockerTypeByID(locker.getLockerTypeID());
 
-        String lockerSize = lockerType != null ? lockerType.getLockerTypeSize() : "Unknown";
+        // --- Fetch all locker segments for this booking (transfers included) ---
+        List<LockerTransfer> transfers = transferDAO.getAllTransfersForBooking(booking.getBookingReference());
+        List<LockerSegment> segments = new ArrayList<>();
+
+        LocalDateTime segmentStart = LocalDateTime.parse(booking.getCheckInTime(), Booking.FORMATTER);
+        LocalDateTime checkoutTime = LocalDateTime.now();
+
+        for (LockerTransfer transfer : transfers) {
+            Locker oldLocker = lockerDAO.getLockerByID(transfer.getOldLockerID());
+            LockerType oldLockerType = lockerTypeDAO.getLockerTypeByID(oldLocker.getLockerTypeID());
+            LocalDateTime transferTime = transfer.getTransferDate();
+
+            // Compute hours, rounding up any partial hour
+            long minutes = ChronoUnit.MINUTES.between(segmentStart, transferTime);
+            long hours = (long) Math.ceil(minutes / 60.0);
+            if (hours <= 0) hours = 1; // minimum 1 hour
+
+            segments.add(new LockerSegment(oldLocker, oldLockerType, hours, transfer.getAdjustmentAmount()));
+            segmentStart = transferTime;
+        }
+
+        // Add final segment from last transfer (or initial locker if no transfers) to checkout
+        int lastLockerID = transfers.isEmpty() ? booking.getLockerID() : transfers.get(transfers.size() - 1).getNewLockerID();
+        Locker lastLocker = lockerDAO.getLockerByID(lastLockerID);
+        LockerType lastLockerType = lockerTypeDAO.getLockerTypeByID(lastLocker.getLockerTypeID());
+
+        long minutesFinal = ChronoUnit.MINUTES.between(segmentStart, checkoutTime);
+        long finalHours = (long) Math.ceil(minutesFinal / 60.0);
+        if (finalHours <= 0) finalHours = 1;
+
+        segments.add(new LockerSegment(lastLocker, lastLockerType, finalHours, 0));
 
         double reservationFee = booking.getReservationFee();
-        double remainingFee = payment.getPaymentAmount() - reservationFee; // compute remaining
-        double totalFee = payment.getPaymentAmount();
+        double remainingFee = 0;
+        double totalFee = 0;
+
+        for (LockerSegment segment : segments) {
+            double rate = segment.getLockerType() != null ? segment.getLockerType().getLockerRate() : 0;
+            double usageFee = segment.getHours() * rate;
+            double segmentTotal = usageFee + segment.getAdjustmentAmount(); // add adjustment here
+            totalFee += segmentTotal;
+        }
+        remainingFee = totalFee - reservationFee;
+
+        String lockerInfoText = "";
+        for (LockerSegment segment : segments) {
+            String size = segment.getLockerType() != null ? segment.getLockerType().getLockerTypeSize() : "Unknown";
+            lockerInfoText += String.format("Locker ID: %d [%s], Hours: %d, Adjustment: ₱%.2f\n",
+                    segment.getLocker().getLockerID(), size, segment.getHours(), segment.getAdjustmentAmount());
+        }
 
         Label title = new Label("Payment Receipt");
         title.setFont(Font.font("Arial", FontWeight.BOLD, 24));
         title.setTextFill(Color.DEEPPINK);
 
-// --- Add Payment ID ---
         Label paymentIDLabel = new Label("Payment ID: " + payment.getPaymentID());
-        paymentIDLabel.setFont(Font.font("Arial", 16));
-        paymentIDLabel.setTextFill(Color.BLACK);
-
         Label bookingRef = new Label("Booking Reference: " + payment.getBookingReference());
         Label userInfo = new Label("User: " + user.getFirstName() + " " + user.getLastName() + " (ID: " + user.getUserID() + ")");
-        Label lockerInfo = new Label("Locker: " + locker.getLockerID() + " [" + lockerSize + "]");
+        Label lockerInfo = new Label(lockerInfoText);
         Label duration = new Label("Check-In: " + booking.getCheckInTime() + "\nCheck-Out: " + booking.getCheckOutTime());
-
-        Label feeBreakdown = new Label(
-                String.format(
-                        "Reservation Fee: ₱%.2f\nRemaining Amount: ₱%.2f\nTotal Amount Paid: ₱%.2f",
-                        reservationFee,
-                        remainingFee,
-                        totalFee
-                )
-        );
-
-        Label paymentInfo = new Label(
-                "Payment Method: " + payment.getPaymentMethod() + "\n" +
-                        "Payment Status: " + payment.getPaymentStatus() + "\n" +
-                        "Payment Date: " + payment.getPaymentDate()
-        );
+        Label feeBreakdown = new Label(String.format("Reservation Fee: ₱%.2f\nRemaining Amount: ₱%.2f\nTotal Amount Paid: ₱%.2f",
+                reservationFee, remainingFee, totalFee));
+        Label paymentInfo = new Label("Payment Method: " + payment.getPaymentMethod() + "\n" +
+                "Payment Status: " + payment.getPaymentStatus() + "\n" +
+                "Payment Date: " + payment.getPaymentDate());
 
         for (Label l : new Label[]{paymentIDLabel, bookingRef, userInfo, lockerInfo, duration, feeBreakdown, paymentInfo}) {
             l.setFont(Font.font("Arial", 16));
@@ -3600,11 +3466,29 @@ private static void viewAllCancellations(Stage stage) {
         closeBtn.setOnAction(e -> receiptStage.close());
 
         content.getChildren().addAll(title, paymentIDLabel, bookingRef, userInfo, lockerInfo, duration, feeBreakdown, paymentInfo, closeBtn);
-
         root.getChildren().add(content);
 
         receiptStage.setScene(scene);
-        receiptStage.showAndWait(); // modal pop-up
+        receiptStage.showAndWait();
+    }
+
+    private static class LockerSegment {
+        private final Locker locker;
+        private final LockerType lockerType;
+        private final long hours;
+        private final double adjustmentAmount;
+
+        public LockerSegment(Locker locker, LockerType lockerType, long hours, double adjustmentAmount) {
+            this.locker = locker;
+            this.lockerType = lockerType;
+            this.hours = hours;
+            this.adjustmentAmount = adjustmentAmount;
+        }
+
+        public Locker getLocker() { return locker; }
+        public LockerType getLockerType() { return lockerType; }
+        public long getHours() { return hours; }
+        public double getAdjustmentAmount() { return adjustmentAmount; }
     }
 
 
@@ -3863,11 +3747,43 @@ private static void viewAllCancellations(Stage stage) {
         newLockerLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
         newLockerLabel.setTextFill(Color.BLACK);
 
+        // --- Auto-fill Old Locker from Booking Reference ---
+        BookingDAO bookingDAOAuto = new BookingDAO();
+        LockerDAO lockerDAOAuto = new LockerDAO();
+
         // --- ComboBox for available lockers ---
         ComboBox<Locker> lockerCombo = new ComboBox<>();
         lockerCombo.setPrefWidth(300);
         lockerCombo.setMaxWidth(300);
         lockerCombo.setStyle("-fx-pref-height: 50px; -fx-font-size: 20px;");
+
+        bookingField.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal == null || newVal.isEmpty()) {
+                oldLockerField.setText("");
+                oldLockerField.setEditable(true);
+                lockerCombo.getItems().clear();
+                return;
+            }
+
+            Booking booking = bookingDAOAuto.getBookingByReference(newVal);
+
+            if (booking != null && booking.getBookingStatus().equalsIgnoreCase("Checked-in")) {
+                int currentLocker = booking.getLockerID();
+                oldLockerField.setText(String.valueOf(currentLocker));
+                oldLockerField.setEditable(false);
+
+                // Refresh available lockers EXCEPT the current locker
+                List<Locker> available = lockerDAOAuto.getAvailableLocker();
+                available.removeIf(l -> l.getLockerID() == currentLocker);
+
+                lockerCombo.getItems().clear();
+                lockerCombo.getItems().addAll(available);
+            } else {
+                oldLockerField.setText("");
+                oldLockerField.setEditable(true);
+                lockerCombo.getItems().clear();
+            }
+        });
 
         LockerDAO lockerDAO = new LockerDAO();
         LockerTypeDAO lockerTypeDAO = new LockerTypeDAO();
@@ -3935,8 +3851,7 @@ private static void viewAllCancellations(Stage stage) {
         // --- Form Layout ---
         VBox fieldsBox = new VBox(15,
                 bookingLabel, bookingField,
-                oldLockerLabel, oldLockerField,
-                newLockerLabel, lockerCombo,
+                oldLockerLabel, oldLockerField, newLockerLabel, lockerCombo,
                 amountLabel, amountField
         );
         fieldsBox.setAlignment(Pos.TOP_LEFT);
@@ -3967,8 +3882,9 @@ private static void viewAllCancellations(Stage stage) {
                 int oldLockerID = Integer.parseInt(oldLockerField.getText().trim());
                 Locker selectedLocker = lockerCombo.getValue();
 
-                if (selectedLocker == null) {
-                    new Alert(Alert.AlertType.WARNING, "Please select a new locker.").showAndWait();
+                Booking booking = bookingDAOAuto.getBookingByReference(bookingRef);
+                if (booking == null || !booking.getBookingStatus().equalsIgnoreCase("Checked-in")) {
+                    new Alert(Alert.AlertType.ERROR, "Cannot transfer: booking is not active.").showAndWait();
                     return;
                 }
 

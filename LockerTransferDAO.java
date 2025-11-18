@@ -6,7 +6,7 @@ public class LockerTransferDAO {
 
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/luggage_locker_db";
     private static final String USER = "root";
-    private static final String PASSWORD = "22757205";
+    private static final String PASSWORD = "Raeka.101482";
 
     // --- Get all transfers ---
     public static List<LockerTransfer> getAllTransfers() {
@@ -94,6 +94,36 @@ public class LockerTransferDAO {
         return transfer;
     }
 
+    public static List<LockerTransfer> getAllTransfersForBooking(String bookingReference) {
+        List<LockerTransfer> transfers = new ArrayList<>();
+        String query = "SELECT * FROM LockerTransfer WHERE bookingReference = ? ORDER BY transferDate ASC";
+
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement ps = conn.prepareStatement(query)) {
+
+            ps.setString(1, bookingReference);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                LockerTransfer transfer = new LockerTransfer(
+                        rs.getInt("transferID"),
+                        rs.getString("bookingReference"),
+                        rs.getTimestamp("transferDate").toLocalDateTime(),
+                        rs.getDouble("adjustmentAmount"),
+                        rs.getInt("oldLockerID"),
+                        rs.getInt("newLockerID")
+                );
+                transfers.add(transfer);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return transfers;
+    }
+
+
     // --- Add new transfer and update booking ---
     public static int addTransfer(LockerTransfer transfer) {
         int generatedId = -1;
@@ -145,6 +175,12 @@ public class LockerTransferDAO {
                 ps2.setString(2, transfer.getBookingReference());
                 ps2.executeUpdate();
             }
+
+            // --- Update locker statuses ---
+            LockerDAO lockerDAO2 = new LockerDAO();
+            lockerDAO2.updateLockerStatus(transfer.getOldLockerID(), "Available");
+            lockerDAO2.updateLockerStatus(transfer.getNewLockerID(), "Occupied");
+
 
         } catch (SQLException e) {
             e.printStackTrace();
