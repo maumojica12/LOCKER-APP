@@ -2420,7 +2420,7 @@ private static void checkIn(Stage stage) {
     stage.show();
 }
 
-private static void viewAllActiveBookings(Stage stage){
+private static void viewAllActiveBookings(Stage stage) {
     // --- Background setup ---
     Image backgroundImage = new Image(AppFX.class.getResourceAsStream("viewBookings.jpg"));
     ImageView backgroundView = new ImageView(backgroundImage);
@@ -2450,9 +2450,8 @@ private static void viewAllActiveBookings(Stage stage){
     LockerDAO lockerDAO = new LockerDAO();
     LockerTypeDAO lockerTypeDAO = new LockerTypeDAO();
     UserDAO userDAO = new UserDAO();
-    BookingService bookingService = new BookingService(userDAO, bookingDAO, lockerDAO);
 
-    // --- Load all pending bookings ---
+    // --- Load all active bookings ---
     List<Booking> activeBookings = bookingDAO.getCheckedInBookings();
 
     if (activeBookings.isEmpty()) {
@@ -2461,9 +2460,9 @@ private static void viewAllActiveBookings(Stage stage){
         noBooking.setTextFill(Color.WHITE);
 
         StackPane wrapper = new StackPane(noBooking);
-        wrapper.setPrefWidth(900); 
-        StackPane.setAlignment(noBooking, Pos.TOP_CENTER); 
-        StackPane.setMargin(noBooking, new Insets(120, 0, 0, 0)); 
+        wrapper.setPrefWidth(900);
+        StackPane.setAlignment(noBooking, Pos.TOP_CENTER);
+        StackPane.setMargin(noBooking, new Insets(120, 0, 0, 0));
 
         bookingList.getChildren().add(wrapper);
     } else {
@@ -2473,18 +2472,23 @@ private static void viewAllActiveBookings(Stage stage){
             card.setPrefWidth(900);
             card.setAlignment(Pos.CENTER_LEFT);
             card.setStyle(
-                "-fx-background-color: rgba(255,255,255,0.85); " +
-                "-fx-background-radius: 12; " +
-                "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.25), 10, 0, 0, 5);"
+                    "-fx-background-color: rgba(255,255,255,0.85); " +
+                    "-fx-background-radius: 12; " +
+                    "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.25), 10, 0, 0, 5);"
             );
 
-            // --- Fetch user and locker info ---
+            // --- Fetch user info ---
             User user = userDAO.getUserById(booking.getUserID());
-            Locker locker = lockerDAO.getLockerByID(booking.getLockerID());
+
+            // --- Determine latest locker (consider transfers) ---
+            LockerTransfer latestTransfer = LockerTransferDAO.getLatestTransferForBooking(booking.getBookingReference());
+            int displayLockerID = (latestTransfer != null) ? latestTransfer.getNewLockerID() : booking.getLockerID();
+            Locker locker = lockerDAO.getLockerByID(displayLockerID);
+
             LockerType lockerType = lockerTypeDAO.getLockerTypeByID(locker.getLockerTypeID());
             String lockerSize = lockerType != null ? lockerType.getLockerTypeSize() : "Unknown";
 
-           // --- Build info label using TextFlow ---
+            // --- Build info label ---
             Text bookingRefText = new Text("Booking Reference: " + booking.getBookingReference() + "\n");
             bookingRefText.setFont(Font.font("Arial", FontWeight.BOLD, 14));
             bookingRefText.setFill(Color.BLACK);
