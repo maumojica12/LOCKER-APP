@@ -15,13 +15,16 @@ public class Locker {
         this.lockerStatus = lockerStatus;
     }
 
+    public Locker(int lockerTypeID, int locationID, int postal) {
+        this.lockerTypeID = lockerTypeID;
+        this.locationID = locationID;
+        this.locationPostalCode = postal;
+        this.lockerStatus = "Available";
+    }
+
     //Getters
     public int getLockerID(){
         return lockerID;
-    }
-
-    public void setLockerID(int lockerID){
-        this.lockerID = lockerID;
     }
 
     public int getLockerTypeID(){
@@ -40,8 +43,20 @@ public class Locker {
         return lockerStatus;
     }
 
-    public void setLockerStatus(String lockerStatus){
-        this.lockerStatus = lockerStatus;
+    public void setLockerID(int id) {
+        lockerID = id;
+    }
+    public void setLockerTypeID(int id) {
+        lockerTypeID = id;
+    }
+    public void setLocationID(int id) {
+        locationID = id;
+    }
+    public void setLocationPostalCode(int p) {
+        locationPostalCode = p;
+    }
+    public void setLockerStatus(String s) {
+        lockerStatus = s;
     }
 
     @Override
