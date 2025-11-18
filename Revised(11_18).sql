@@ -94,10 +94,7 @@ CREATE TABLE LockerTransfer(
 
 
 -- REPORTS
-
 -- 1. OCCUPANCY REPORTS
--- 1. OCCUPANCY REPORTS
-
 -- 1.1 LOCKER SIZE REPORT
 SELECT LT.lockerTypeSize AS 'Locker Size',
        COUNT(B.bookingReference) AS 'Total Bookings'
