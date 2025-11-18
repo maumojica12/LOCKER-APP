@@ -3121,44 +3121,48 @@ private static void viewAllCancellations(Stage stage) {
 
                 cancelBtn.setOnAction(e -> {
 
-                    // Validate reason
+                    //Validate cancellation reason
                     String reason = reasonField.getText().trim();
                     if (reason.isEmpty()) {
                         errorLabel.setText("Please enter a cancellation reason.");
                         return;
                     }
 
-                    // Check if too late to cancel
-                    try {
-                        if (booking.getCheckInTime() != null) {
-                            LocalDateTime checkIn = LocalDateTime.parse(booking.getCheckInTime());
-                            if (LocalDateTime.now().isAfter(checkIn.minusHours(1))) {
-                                errorLabel.setText("Cancellation allowed only 1 hour before check-in.");
-                                return;
-                            }
-                        }
-                    } catch (Exception ex) {
-                        errorLabel.setText("Stored date format invalid.");
+                    //Parse selectedReservationDate safely
+                    LocalDateTime reservationDateTime = booking.getSelectedReservationDateTime();
+                    if (reservationDateTime == null) {
+                        errorLabel.setText("Reservation date not set. Cannot cancel booking.");
                         return;
                     }
 
-                    // Perform cancellation
+                    //Check if cancellation is allowed (only before reservation date/time)
+                    LocalDateTime now = LocalDateTime.now();
+                    if (!now.isBefore(reservationDateTime)) {
+                        errorLabel.setText("Cannot cancel booking on or after the reservation date.");
+                        return;
+                    }
+
+                    //Perform cancellation
                     booking.setBookingStatus("Cancelled");
                     bookingDAO.updateBooking(booking);
 
+                    // 5. Update locker availability
                     lockerDAO.updateLockerStatus(booking.getLockerID(), "Available");
 
+                    // 6. Record cancellation
                     cancellationDAO.addCancellation(
                             booking.getBookingReference(),
-                            LocalDateTime.now().toString(),
+                            now.format(Booking.FORMATTER),
                             reason,
                             booking.getReservationFee()
                     );
 
+                    // 7. Notify user and remove from UI
                     errorLabel.setTextFill(Color.GREEN);
                     errorLabel.setText("Booking cancelled successfully!");
                     bookingList.getChildren().remove(card);
                 });
+
 
                 Region spacer = new Region();
                 HBox.setHgrow(spacer, Priority.ALWAYS);
