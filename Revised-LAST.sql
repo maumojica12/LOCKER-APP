@@ -50,6 +50,7 @@ CREATE TABLE Booking(
 		lockerID INT NOT NULL,
 		reservationFee DECIMAL(10,2),
 		reservationDate DATETIME DEFAULT NOW(),
+        selectedReservationDate DATETIME NOT NULL,
 		bookingStatus ENUM('Pending Check-in','Checked-In','Checked-Out','Cancelled') DEFAULT 'Pending Check-in',
 		checkInTime DATETIME,
 		checkOutTime DATETIME,
@@ -192,38 +193,30 @@ INSERT INTO Locker (lockerTypeID, locationID, locationPostalCode, lockerStatus) 
 (3, 1, '1004', 'Available'),
 (3, 2, '4024', 'Available');
 
--- Booking (20 records) - fixed DATE_SUB syntax
-INSERT INTO Booking (bookingReference, userID, lockerID, reservationFee, reservationDate, bookingStatus, checkInTime, checkOutTime) VALUES
-('BKG-0001', 1, 1, 80.00,  '2025-05-19 11:10:26', 'Checked-Out', '2025-05-19 14:15:26', '2025-05-19 15:17:26'),
-('BKG-0002', 2, 2, 120.00, DATE_SUB(NOW(), INTERVAL 8 HOUR), 'Pending Check-in', NULL, NULL),
-('BKG-0003', 3, 3, 180.00, DATE_SUB(NOW(), INTERVAL 3 HOUR), 'Cancelled', NULL, NULL),
-('BKG-0004', 4, 4, 80.00,  '2025-04-16 05:46:16', 'Checked-Out', '2025-04-16 07:56:16', '2025-04-16 08:46:16'),
-('BKG-0005', 5, 5, 120.00, DATE_SUB(NOW(), INTERVAL 4 HOUR), 'Checked-In', DATE_SUB(NOW(), INTERVAL 3 HOUR), NULL),
-('BKG-0006', 6, 6, 120.00, DATE_SUB(NOW(), INTERVAL 5 HOUR), 'Pending Check-in', NULL, NULL),
-('BKG-0007', 7, 7, 180.00, DATE_SUB(NOW(), INTERVAL 6 HOUR), 'Cancelled', NULL, NULL),
-('BKG-0008', 8, 8, 180.00, '2025-05-14 23:50:49', 'Checked-Out', '2025-05-15 01:50:49', '2025-05-15 02:44:49'),
-('BKG-0009', 9, 9, 80.00,  '2025-02-27 10:10:26', 'Checked-Out', '2025-02-27 12:10:26', '2025-02-27 14:21:26'),
-('BKG-0010', 10, 10, 180.00, DATE_SUB(NOW(), INTERVAL 4 HOUR), 'Pending Check-in', NULL, NULL),
+INSERT INTO Booking 
+(bookingReference, userID, lockerID, reservationFee, reservationDate, selectedReservationDate, bookingStatus, checkInTime, checkOutTime) 
+VALUES
+('BKG-0001', 1, 1, 80.00,  '2025-05-19 11:10:26', '2025-05-19 16:15:26', 'Checked-Out', '2025-05-19 14:15:26', '2025-05-19 15:17:26'),
+('BKG-0002', 2, 2, 120.00, '2025-05-19 08:00:00', '2025-05-19 13:30:00', 'Pending Check-in', NULL, NULL),
+('BKG-0003', 3, 3, 180.00, '2025-05-19 09:30:00', '2025-05-19 15:00:00', 'Cancelled', NULL, NULL),
+('BKG-0004', 4, 4, 80.00,  '2025-04-16 05:46:16', '2025-04-16 10:50:16', 'Checked-Out', '2025-04-16 07:56:16', '2025-04-16 08:46:16'),
+('BKG-0005', 5, 5, 120.00, '2025-05-18 12:00:00', '2025-05-18 17:30:00', 'Checked-In', '2025-05-18 15:00:00', NULL),
+('BKG-0006', 6, 6, 120.00, '2025-05-18 10:00:00', '2025-05-18 15:15:00', 'Pending Check-in', NULL, NULL),
+('BKG-0007', 7, 7, 180.00, '2025-05-18 07:00:00', '2025-05-18 12:30:00', 'Cancelled', NULL, NULL),
+('BKG-0008', 8, 8, 180.00, '2025-05-14 23:50:49', '2025-05-15 05:00:49', 'Checked-Out', '2025-05-15 01:50:49', '2025-05-15 02:44:49'),
+('BKG-0009', 9, 9, 80.00,  '2025-02-27 10:10:26', '2025-02-27 15:15:26', 'Checked-Out', '2025-02-27 12:10:26', '2025-02-27 14:21:26'),
+('BKG-0010', 10, 10, 180.00, '2025-05-17 14:00:00', '2025-05-17 19:30:00', 'Pending Check-in', NULL, NULL),
 
-('BKG-0011', 1, 2, 80.00, DATE_SUB(NOW(), INTERVAL 12 HOUR), 'Checked-In', DATE_SUB(NOW(), INTERVAL 11 HOUR), NULL),
-('BKG-0012', 2, 3, 120.00, DATE_SUB(NOW(), INTERVAL 2 DAY), 'Checked-Out',
- DATE_SUB(DATE_SUB(NOW(), INTERVAL 2 DAY), INTERVAL 3 HOUR),
- DATE_SUB(DATE_SUB(NOW(), INTERVAL 2 DAY), INTERVAL 4 HOUR)),
-('BKG-0013', 3, 4, 180.00, DATE_SUB(NOW(), INTERVAL 1 DAY), 'Cancelled', NULL, NULL),
-('BKG-0014', 4, 5, 80.00, DATE_SUB(NOW(), INTERVAL 3 DAY), 'Checked-Out',
- DATE_SUB(DATE_SUB(NOW(), INTERVAL 3 DAY), INTERVAL -1 HOUR), -- adds 1 hour
- DATE_SUB(DATE_SUB(NOW(), INTERVAL 3 DAY), INTERVAL -2 HOUR)), -- adds 2 hours
-('BKG-0015', 5, 6, 120.00, DATE_SUB(NOW(), INTERVAL 5 DAY), 'Pending Check-in', NULL, NULL),
-('BKG-0016', 6, 7, 180.00, DATE_SUB(NOW(), INTERVAL 7 DAY), 'Checked-Out',
- DATE_SUB(DATE_SUB(NOW(), INTERVAL 7 DAY), INTERVAL -2 HOUR),
- DATE_SUB(DATE_SUB(NOW(), INTERVAL 7 DAY), INTERVAL -3 HOUR)),
-('BKG-0017', 7, 8, 80.00, DATE_SUB(NOW(), INTERVAL 10 DAY), 'Checked-In',
- DATE_SUB(DATE_SUB(NOW(), INTERVAL 10 DAY), INTERVAL -1 HOUR), NULL),
-('BKG-0018', 8, 9, 120.00, DATE_SUB(NOW(), INTERVAL 15 DAY), 'Cancelled', NULL, NULL),
-('BKG-0019', 9, 10, 180.00, DATE_SUB(NOW(), INTERVAL 20 DAY), 'Checked-Out',
- DATE_SUB(DATE_SUB(NOW(), INTERVAL 20 DAY), INTERVAL -1 HOUR),
- DATE_SUB(DATE_SUB(NOW(), INTERVAL 20 DAY), INTERVAL -2 HOUR)),
-('BKG-0020', 10, 1, 80.00, DATE_SUB(NOW(), INTERVAL 25 DAY), 'Pending Check-in', NULL, NULL);
+('BKG-0011', 1, 1, 80.00, '2025-05-16 09:00:00', '2025-05-16 14:30:00', 'Checked-In', '2025-05-16 10:00:00', NULL),
+('BKG-0012', 2, 2, 120.00, '2025-05-15 08:00:00', '2025-05-15 13:15:00', 'Checked-Out', '2025-05-15 05:00:00', '2025-05-15 06:00:00'),
+('BKG-0013', 3, 3, 180.00, '2025-05-14 11:00:00', '2025-05-14 16:30:00', 'Cancelled', NULL, NULL),
+('BKG-0014', 4, 4, 80.00, '2025-05-13 07:30:00', '2025-05-13 12:45:00', 'Checked-Out', '2025-05-13 08:30:00', '2025-05-13 09:30:00'),
+('BKG-0015', 5, 5, 120.00, '2025-05-12 09:00:00', '2025-05-12 14:30:00', 'Pending Check-in', NULL, NULL),
+('BKG-0016', 6, 6, 180.00, '2025-05-10 10:00:00', '2025-05-10 15:30:00', 'Checked-Out', '2025-05-10 11:00:00', '2025-05-10 12:00:00'),
+('BKG-0017', 7, 7, 80.00, '2025-05-05 08:00:00', '2025-05-05 13:15:00', 'Checked-In', '2025-05-05 09:00:00', NULL),
+('BKG-0018', 8, 8, 120.00, '2025-04-30 12:00:00', '2025-04-30 17:30:00', 'Cancelled', NULL, NULL),
+('BKG-0019', 9, 9, 180.00, '2025-04-25 11:00:00', '2025-04-25 16:30:00', 'Checked-Out', '2025-04-25 12:00:00', '2025-04-25 13:00:00'),
+('BKG-0020', 10, 10, 80.00, '2025-04-20 10:00:00', '2025-04-20 15:30:00', 'Pending Check-in', NULL, NULL);
 
 -- Payment
 INSERT INTO Payment (paymentID, bookingReference, userID, paymentAmount, paymentMethod, paymentStatus, paymentDate) VALUES
