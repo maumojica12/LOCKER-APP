@@ -250,8 +250,7 @@ private static void registerUser(Stage stage) {
     // --- Form Elements ---
     VBox form = new VBox(15); // spacing between elements
     form.setAlignment(Pos.TOP_CENTER);
-    
-    // Left padding moves the entire form block to the right. (e.g., 400)
+   
     final double FORM_LEFT_OFFSET = 400; 
     form.setPadding(new Insets(220, 0, 0, FORM_LEFT_OFFSET)); 
     
@@ -308,7 +307,6 @@ private static void registerUser(Stage stage) {
     Label successMessageLabel = new Label();
     successMessageLabel.setMaxWidth(FIELD_WIDTH); 
     successMessageLabel.setAlignment(Pos.CENTER);
-    // Move lower (Top: 30) and more to the left (Left: -220). ADJUST -220 for position.
     VBox.setMargin(successMessageLabel, new Insets(-40, 0, 0, -290)); 
     successMessageLabel.setVisible(false); // Start hidden
 
@@ -341,11 +339,42 @@ private static void registerUser(Stage stage) {
         String email = emailField.getText().trim();
 
         if (firstName.isEmpty() || lastName.isEmpty()) {
-            // Display required fields error using the ERROR label
             errorMessageLabel.setText("First and Last Names are Required!");
             errorMessageLabel.setStyle("-fx-text-fill: yellow;-fx-font-size: 16px; -fx-font-weight: bold;");
             errorMessageLabel.setVisible(true);
             return;
+        }
+
+        if (!contact.isEmpty()) {
+            // Starts with 0 must be all digits + length 11
+            if (contact.startsWith("0")) {
+
+                if (!contact.matches("[0-9]+") || contact.length() != 11) {
+                    errorMessageLabel.setText("Invalid Contact Number Format");
+                    errorMessageLabel.setStyle("-fx-text-fill: yellow; -fx-font-size: 16px; -fx-font-weight: bold;");
+                    errorMessageLabel.setVisible(true);
+                    return;
+                }
+            }
+
+            // Starts with +63  must be +63 + 10 digits = length 13
+            else if (contact.startsWith("+63")) {
+
+                if (!contact.substring(3).matches("[0-9]+") || contact.length() != 13) {
+                    errorMessageLabel.setText("Invalid Contact Number Format");
+                    errorMessageLabel.setStyle("-fx-text-fill: yellow; -fx-font-size: 16px; -fx-font-weight: bold;");
+                    errorMessageLabel.setVisible(true);
+                    return;
+                }
+            }
+
+            // Any other prefix is invalid
+            else {
+                errorMessageLabel.setText("Invalid Contact Number Format");
+                errorMessageLabel.setStyle("-fx-text-fill: yellow; -fx-font-size: 16px; -fx-font-weight: bold;");
+                errorMessageLabel.setVisible(true);
+                return;
+            }
         }
 
         User newUser = new User(firstName, lastName, contact, email);
@@ -371,6 +400,7 @@ private static void registerUser(Stage stage) {
     });
     backBtn.setOnAction(e -> handleManageUsers(stage));
 }
+
 
 private static void viewAllUser(Stage stage) {
     // --- Background setup ---
@@ -639,20 +669,19 @@ private static void updateUser(Stage stage) {
     backgroundView.setPickOnBounds(false);
     backgroundView.setPreserveRatio(false);
 
-    StackPane root = new StackPane();
+    AnchorPane root = new AnchorPane();
     root.getChildren().add(backgroundView);
 
-    // --- Common constants ---
     double FIELD_WIDTH = 330;
     double FIELD_HEIGHT = 40;
+    double FIELD_SPACING = 10;
 
-    // --- DAO + current user holder ---
     UserDAO userDAO = new UserDAO();
     User[] currentUser = new User[1];
 
-    // --- LEFT SIDE: ID input + fetch + messages ---
+    // --- LEFT SIDE: Fetch User ---
     TextField userIDField = new TextField();
-    userIDField.setPromptText("Enter User ID");  
+    userIDField.setPromptText("Enter User ID");
     userIDField.setPrefSize(FIELD_WIDTH, FIELD_HEIGHT);
 
     Button fetchBtn = new Button("Fetch User");
@@ -661,20 +690,25 @@ private static void updateUser(Stage stage) {
     Label errorLabel = new Label();
     errorLabel.setStyle("-fx-text-fill: yellow; -fx-font-size: 16px; -fx-font-weight: bold;");
     errorLabel.setWrapText(true);
+    errorLabel.setMaxWidth(FIELD_WIDTH);
+    errorLabel.setVisible(false);
 
     Label userInfoLabel = new Label();
     userInfoLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;");
     userInfoLabel.setWrapText(true);
 
-    VBox leftBox = new VBox(15, userIDField, fetchBtn, errorLabel, userInfoLabel);
-    leftBox.setPadding(new Insets(100, 400, 0, 0)); // top, right, bottom, left
+    VBox leftBox = new VBox(FIELD_SPACING, userIDField, fetchBtn, errorLabel, userInfoLabel);
     leftBox.setAlignment(Pos.TOP_LEFT);
 
-    // --- RIGHT SIDE: update fields + back button ---
+    // Anchor leftBox top-left
+    AnchorPane.setTopAnchor(leftBox, 100.0);
+    AnchorPane.setLeftAnchor(leftBox, 35.0);
+
+    // --- RIGHT SIDE: Update User ---
     TextField firstNameField = new TextField();
     firstNameField.setPromptText("Update First Name");
     firstNameField.setPrefSize(400, FIELD_HEIGHT);
-  
+
     TextField lastNameField = new TextField();
     lastNameField.setPromptText("Update Last Name");
     lastNameField.setPrefSize(400, FIELD_HEIGHT);
@@ -690,35 +724,25 @@ private static void updateUser(Stage stage) {
     Button updateBtn = new Button("Update User");
     updateBtn.setPrefSize(200, FIELD_HEIGHT);
 
+    VBox updateBox = new VBox(FIELD_SPACING, firstNameField, lastNameField, contactField, emailField, updateBtn);
+    updateBox.setAlignment(Pos.TOP_LEFT);
+    updateBox.setVisible(false);
+
+    // Anchor updateBox top-right
+    AnchorPane.setTopAnchor(updateBox, 250.0);
+    AnchorPane.setRightAnchor(updateBox, 300.0);
+
+    // --- Back button ---
     Button backBtn = new Button("Back to User Menu");
     backBtn.setPrefSize(200, 50);
+    AnchorPane.setBottomAnchor(backBtn, 50.0);
+    AnchorPane.setRightAnchor(backBtn, 50.0);
 
-    // --- Right Pane ---
-    BorderPane rightPane = new BorderPane();
-    rightPane.setPadding(new Insets(50, 30, 50, 20)); // overall rightPane padding
+    // --- Add everything to root ---
+    root.getChildren().addAll(leftBox, updateBox, backBtn);
+    backgroundView.toBack();
 
-    // Update fields + button
-    VBox updateBox = new VBox(15, firstNameField, lastNameField, contactField, emailField, updateBtn);
-    updateBox.setVisible(false);
-    updateBox.setAlignment(Pos.TOP_LEFT);
-
-    // Move slightly down and left using translate
-    updateBox.setTranslateX(-250);  // moves left 20px
-    updateBox.setTranslateY(170);   // moves down 50px
-
-    rightPane.setTop(updateBox);
-
-    // Back button at bottom
-    VBox backBox = new VBox(backBtn);
-    backBox.setAlignment(Pos.CENTER);
-    rightPane.setBottom(backBox);
-
-    // --- Main container ---
-    HBox mainBox = new HBox(50, leftBox,rightPane); // 50px spacing between left/right
-    mainBox.setAlignment(Pos.CENTER);
-    root.getChildren().add(mainBox);
-
-    // --- Scene setup ---
+    // --- Scene and Background Binding ---
     Scene scene = new Scene(root, 1300, 700);
     backgroundView.fitWidthProperty().bind(scene.widthProperty());
     backgroundView.fitHeightProperty().bind(scene.heightProperty());
@@ -727,14 +751,17 @@ private static void updateUser(Stage stage) {
     stage.setTitle("Update User");
     stage.show();
 
-    // --- Fetch Button Logic ---
+    // --- BUTTON LOGIC REMAINS UNCHANGED ---
     fetchBtn.setOnAction(e -> {
         errorLabel.setText("");
         userInfoLabel.setText("");
 
-        String input = userIDField.getText().trim();
+        String input = userIDField.getText() != null ? userIDField.getText().trim() : "";
         if (input.isEmpty()) {
             errorLabel.setText("Please enter a User ID!");
+            errorLabel.setVisible(true);  // make sure it’s visible
+            errorLabel.toFront();      
+            updateBox.setVisible(false);
             return;
         }
 
@@ -752,65 +779,92 @@ private static void updateUser(Stage stage) {
                         "Email: " + (user.getUserEmail() != null ? user.getUserEmail() : "N/A")
                 );
 
-                // Prefill & show update fields
-                firstNameField.setText(user.getFirstName());
-                lastNameField.setText(user.getLastName());
-                contactField.setText(user.getUserContact());
-                emailField.setText(user.getUserEmail());
+                firstNameField.setText(user.getFirstName() != null ? user.getFirstName() : "");
+                lastNameField.setText(user.getLastName() != null ? user.getLastName() : "");
+                contactField.setText(user.getUserContact() != null ? user.getUserContact() : "");
+                emailField.setText(user.getUserEmail() != null ? user.getUserEmail() : "");
 
                 updateBox.setVisible(true);
 
             } else {
                 errorLabel.setText("No user found with ID " + id + ".");
+                errorLabel.setVisible(true);  // make sure it’s visible
+                errorLabel.toFront();      
                 updateBox.setVisible(false);
             }
 
         } catch (NumberFormatException ex) {
             errorLabel.setText("Invalid User ID format!");
+            errorLabel.setVisible(true);  // make sure it’s visible
+            errorLabel.toFront();      
             updateBox.setVisible(false);
         }
     });
 
-    // --- Update Button Logic ---
-updateBtn.setOnAction(e -> {
-    if (currentUser[0] == null) {
-        errorLabel.setText("Fetch a user first before updating.");
-        return;
-    }
-
-    String newFirstName = firstNameField.getText().trim();
-    String newLastName = lastNameField.getText().trim();
-    String newContact = contactField.getText().trim();
-    String newEmail = emailField.getText().trim();
-
-    // --- Validation: first and last name cannot be empty ---
-    if (newFirstName.isEmpty() || newLastName.isEmpty()) {
-        errorLabel.setText("First Name and Last Name cannot be empty!");
-        return;
-    }
-
-    // Update user object
-    currentUser[0].setFirstName(newFirstName);
-    currentUser[0].setLastName(newLastName);
-    currentUser[0].setUserContact(newContact);
-    currentUser[0].setUserEmail(newEmail);
-
-    boolean success = userDAO.updateUser(currentUser[0]);
-    if (success) {
-        userInfoLabel.setText(
-                "User updated successfully!\n" +
-                "User ID: " + currentUser[0].getUserID() + "\n" +
-                "Username: " + currentUser[0].getFirstName() + " " + currentUser[0].getLastName() + "\n" +
-                "Contact: " + currentUser[0].getUserContact() + "\n" +
-                "Email: " + currentUser[0].getUserEmail()
-        );
+    updateBtn.setOnAction(e -> {
         errorLabel.setText("");
-    } else {
-        errorLabel.setText("Update failed. Try again.");
-    }
-});
 
-    // --- Back Button ---
+        if (currentUser[0] == null) {
+            errorLabel.setText("Fetch a user first before updating.");
+            return;
+        }
+
+        String newFirstName = firstNameField.getText() != null ? firstNameField.getText().trim() : "";
+        String newLastName  = lastNameField.getText() != null ? lastNameField.getText().trim() : "";
+        String newContact   = contactField.getText() != null ? contactField.getText().trim() : "";
+        String newEmail     = emailField.getText() != null ? emailField.getText().trim() : "";
+
+        if (newFirstName.isEmpty() || newLastName.isEmpty()) {
+            errorLabel.setText("First Name and Last Name cannot be empty!");
+            return;
+        }
+
+        if (newContact.isEmpty()) newContact = null;
+        if (newEmail.isEmpty()) newEmail = null;
+
+        if (newContact != null) {
+            if (newContact.startsWith("0")) {
+                if (!newContact.matches("[0-9]+") || newContact.length() != 11) {
+                    errorLabel.setText("Invalid Contact Number Format\n(must be 11 digits starting with 0)");
+                    errorLabel.setVisible(true);
+                    errorLabel.toFront();
+                    return;
+                }
+            } else if (newContact.startsWith("+63")) {
+                if (!newContact.substring(3).matches("[0-9]+") || newContact.length() != 13) {
+                    errorLabel.setText("Invalid Contact Number Format\n(must be +63 followed by 10 digits)");
+                    errorLabel.setVisible(true);
+                    errorLabel.toFront();
+                    return;
+                }
+            } else {
+                errorLabel.setText("Invalid Contact Number Format\n(must start with 0 or +63)");
+                errorLabel.setVisible(true);
+                errorLabel.toFront();
+                return;
+            }
+        }
+
+        currentUser[0].setFirstName(newFirstName);
+        currentUser[0].setLastName(newLastName);
+        currentUser[0].setUserContact(newContact);
+        currentUser[0].setUserEmail(newEmail);
+
+        boolean success = userDAO.updateUser(currentUser[0]);
+        if (success) {
+            userInfoLabel.setText(
+                    "User updated successfully!\n" +
+                    "User ID: " + currentUser[0].getUserID() + "\n" +
+                    "Username: " + currentUser[0].getFirstName() + " " + currentUser[0].getLastName() + "\n" +
+                    "Contact: " + (currentUser[0].getUserContact() != null ? currentUser[0].getUserContact() : "N/A") + "\n" +
+                    "Email: " + (currentUser[0].getUserEmail() != null ? currentUser[0].getUserEmail() : "N/A")
+            );
+            errorLabel.setText("");
+        } else {
+            errorLabel.setText("Update failed. Try again.");
+        }
+    });
+
     backBtn.setOnAction(e -> handleManageUsers(stage));
 }
 
