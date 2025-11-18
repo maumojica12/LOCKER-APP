@@ -96,13 +96,32 @@ public class LockerTransferDAO {
 
     // --- Add new transfer and update booking ---
     public static int addTransfer(LockerTransfer transfer) {
-        String insertQuery = "INSERT INTO LockerTransfer (bookingReference, transferDate, adjustmentAmount, oldLockerID, newLockerID) "
-                           + "VALUES (?, ?, ?, ?, ?)";
         int generatedId = -1;
 
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD)) {
 
+            // --- Determine adjustment fee based on new locker type ---
+            LockerDAO lockerDAO = new LockerDAO();
+            Locker newLocker = lockerDAO.getLockerByID(transfer.getNewLockerID());
+
+            if (newLocker != null) {
+                LockerType lockerType = new LockerTypeDAO().getLockerTypeByID(newLocker.getLockerTypeID());
+                double adjustmentAmount = 0;
+                if (lockerType != null) {
+                    switch (lockerType.getLockerTypeSize()) {
+                        case "Small":  adjustmentAmount = 40; break;
+                        case "Medium": adjustmentAmount = 60; break;
+                        case "Large":  adjustmentAmount = 80; break;
+                        default: adjustmentAmount = 0;
+                    }
+                }
+                transfer.setAdjustmentAmount(adjustmentAmount);
+            }
+
             // --- Insert into LockerTransfer ---
+            String insertQuery = "INSERT INTO LockerTransfer (bookingReference, transferDate, adjustmentAmount, oldLockerID, newLockerID) "
+                               + "VALUES (?, ?, ?, ?, ?)";
+
             try (PreparedStatement ps = conn.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS)) {
                 ps.setString(1, transfer.getBookingReference());
                 ps.setTimestamp(2, Timestamp.valueOf(transfer.getTransferDate()));
@@ -134,24 +153,43 @@ public class LockerTransferDAO {
         return generatedId;
     }
 
-    // --- Update transfer ---
+    // --- Update transfer and recalc adjustment fee ---
     public static boolean updateTransfer(LockerTransfer transfer) {
-        String query = "UPDATE LockerTransfer SET bookingReference = ?, transferDate = ?, adjustmentAmount = ?, oldLockerID = ?, newLockerID = ? WHERE transferID = ?";
         boolean success = false;
 
-        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
-             PreparedStatement ps = conn.prepareStatement(query)) {
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD)) {
 
-            ps.setString(1, transfer.getBookingReference());
-            ps.setTimestamp(2, Timestamp.valueOf(transfer.getTransferDate()));
-            ps.setDouble(3, transfer.getAdjustmentAmount());
-            ps.setInt(4, transfer.getOldLockerID());
-            ps.setInt(5, transfer.getNewLockerID());
-            ps.setInt(6, transfer.getTransferID());
+            // --- Recalculate adjustment fee based on new locker ---
+            LockerDAO lockerDAO = new LockerDAO();
+            Locker newLocker = lockerDAO.getLockerByID(transfer.getNewLockerID());
+            if (newLocker != null) {
+                LockerType lockerType = new LockerTypeDAO().getLockerTypeByID(newLocker.getLockerTypeID());
+                double adjustmentAmount = 0;
+                if (lockerType != null) {
+                    switch (lockerType.getLockerTypeSize()) {
+                        case "Small":  adjustmentAmount = 40; break;
+                        case "Medium": adjustmentAmount = 60; break;
+                        case "Large":  adjustmentAmount = 80; break;
+                        default: adjustmentAmount = 0;
+                    }
+                }
+                transfer.setAdjustmentAmount(adjustmentAmount);
+            }
 
-            success = ps.executeUpdate() > 0;
+            // --- Update LockerTransfer record ---
+            String query = "UPDATE LockerTransfer SET bookingReference = ?, transferDate = ?, adjustmentAmount = ?, oldLockerID = ?, newLockerID = ? WHERE transferID = ?";
+            try (PreparedStatement ps = conn.prepareStatement(query)) {
+                ps.setString(1, transfer.getBookingReference());
+                ps.setTimestamp(2, Timestamp.valueOf(transfer.getTransferDate()));
+                ps.setDouble(3, transfer.getAdjustmentAmount());
+                ps.setInt(4, transfer.getOldLockerID());
+                ps.setInt(5, transfer.getNewLockerID());
+                ps.setInt(6, transfer.getTransferID());
 
-            // --- Also update booking lockerID if transfer updated ---
+                success = ps.executeUpdate() > 0;
+            }
+
+            // --- Update Booking lockerID if transfer updated ---
             if (success) {
                 String updateBookingSQL = "UPDATE Booking SET lockerID = ? WHERE bookingReference = ?";
                 try (PreparedStatement ps2 = conn.prepareStatement(updateBookingSQL)) {
@@ -170,11 +208,10 @@ public class LockerTransferDAO {
 
     // --- Delete transfer ---
     public static boolean deleteTransfer(int id) {
-        String query = "DELETE FROM LockerTransfer WHERE transferID = ?";
         boolean success = false;
 
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
-             PreparedStatement ps = conn.prepareStatement(query)) {
+             PreparedStatement ps = conn.prepareStatement("DELETE FROM LockerTransfer WHERE transferID = ?")) {
 
             ps.setInt(1, id);
             success = ps.executeUpdate() > 0;

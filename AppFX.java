@@ -3520,25 +3520,62 @@ private static void viewAllCancellations(Stage stage) {
         oldLockerField.setMaxWidth(300);
         oldLockerField.setStyle("-fx-pref-height: 50px; -fx-font-size: 20px;");
 
-        Label newLockerLabel = new Label("New Locker ID:");
+        Label newLockerLabel = new Label("Select New Locker:");
         newLockerLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
         newLockerLabel.setTextFill(Color.BLACK);
 
-        TextField newLockerField = new TextField();
-        newLockerField.setPromptText("Enter New Locker ID");
-        newLockerField.setPrefWidth(300);
-        newLockerField.setMaxWidth(300);
-        newLockerField.setStyle("-fx-pref-height: 50px; -fx-font-size: 20px;");
+        // --- Select New Locker ComboBox ---
+        ComboBox<Locker> lockerCombo = new ComboBox<>();
+        lockerCombo.setPrefWidth(300);
+        lockerCombo.setMaxWidth(300);
+        lockerCombo.setStyle("-fx-pref-height: 50px; -fx-font-size: 20px;");
 
+        LockerDAO lockerDAO = new LockerDAO();
+        LockerTypeDAO lockerTypeDAO = new LockerTypeDAO();
+        List<Locker> availableLockers = lockerDAO.getAvailableLocker();
+        lockerCombo.getItems().addAll(availableLockers);
+
+        lockerCombo.setCellFactory(param -> new ListCell<>() {
+            @Override
+            protected void updateItem(Locker locker, boolean empty) {
+                super.updateItem(locker, empty);
+                if (empty || locker == null) {
+                    setText(null);
+                } else {
+                    LockerType lt = lockerTypeDAO.getLockerTypeByID(locker.getLockerTypeID());
+                    setText("ID " + locker.getLockerID() + " [" + (lt != null ? lt.getLockerTypeSize() : "Unknown") + "]");
+                }
+            }
+        });
+        lockerCombo.setButtonCell(lockerCombo.getCellFactory().call(null));
+
+        // --- Adjustment Fee (auto-updated) ---
         Label amountLabel = new Label("Adjustment Amount:");
         amountLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
         amountLabel.setTextFill(Color.BLACK);
 
         TextField amountField = new TextField();
-        amountField.setPromptText("Enter Adjustment Amount");
         amountField.setPrefWidth(300);
         amountField.setMaxWidth(300);
         amountField.setStyle("-fx-pref-height: 50px; -fx-font-size: 20px;");
+        amountField.setEditable(false);
+
+        lockerCombo.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                LockerType lt = lockerTypeDAO.getLockerTypeByID(newVal.getLockerTypeID());
+                double fee = 0;
+                if (lt != null) {
+                    switch (lt.getLockerTypeSize()) {
+                        case "Small":  fee = 40; break;
+                        case "Medium": fee = 60; break;
+                        case "Large":  fee = 80; break;
+                    }
+                }
+                amountField.setText(String.valueOf(fee));
+            } else {
+                amountField.setText("");
+            }
+        });
 
         // --- Buttons ---
         Button submitBtn = new Button("Submit Transfer");
@@ -3558,24 +3595,18 @@ private static void viewAllCancellations(Stage stage) {
         VBox fieldsBox = new VBox(15,
                 bookingLabel, bookingField,
                 oldLockerLabel, oldLockerField,
-                newLockerLabel, newLockerField,
+                newLockerLabel, lockerCombo,
                 amountLabel, amountField
         );
         fieldsBox.setAlignment(Pos.TOP_LEFT);
-        fieldsBox.setPadding(new Insets(200, 0, 0, 120)); // moved booking reference lower
+        fieldsBox.setPadding(new Insets(200, 0, 0, 120));
 
-        // --- Buttons HBox with spacing ---
-        Region spacer = new Region(); // spacer pushes backBtn to the right
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-
-        HBox buttonsBox = new HBox(20, submitBtn, spacer, backBtn);
+        HBox buttonsBox = new HBox(20, submitBtn, backBtn);
         buttonsBox.setAlignment(Pos.CENTER_LEFT);
         buttonsBox.setPadding(new Insets(30, 50, 0, 120));
 
-        // --- Combine form and buttons ---
         VBox formContainer = new VBox(fieldsBox, buttonsBox);
         formContainer.setAlignment(Pos.TOP_LEFT);
-
         VBox rootContent = new VBox(formContainer);
         rootContent.setAlignment(Pos.TOP_LEFT);
         rootContent.setPadding(new Insets(50, 20, 40, 20));
@@ -3592,8 +3623,14 @@ private static void viewAllCancellations(Stage stage) {
             try {
                 String bookingRef = bookingField.getText().trim();
                 int oldLockerID = Integer.parseInt(oldLockerField.getText().trim());
-                int newLockerID = Integer.parseInt(newLockerField.getText().trim());
-                double adjAmount = Double.parseDouble(amountField.getText().trim());
+                Locker selectedLocker = lockerCombo.getValue();
+                if (selectedLocker == null) {
+                    Alert alert = new Alert(Alert.AlertType.WARNING, "Please select a new locker.");
+                    alert.showAndWait();
+                    return;
+                }
+                int newLockerID = selectedLocker.getLockerID();
+                double adjAmount = Double.parseDouble(amountField.getText());
 
                 LockerTransfer transfer = new LockerTransfer(bookingRef, LocalDateTime.now(), adjAmount, oldLockerID, newLockerID);
                 int id = LockerTransferDAO.addTransfer(transfer);
@@ -3610,7 +3647,7 @@ private static void viewAllCancellations(Stage stage) {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setTitle("Input Error");
                 alert.setHeaderText(null);
-                alert.setContentText("Please enter valid numbers for Locker IDs and Adjustment Amount.");
+                alert.setContentText("Please enter valid numbers.");
                 alert.showAndWait();
             }
         });
