@@ -1800,186 +1800,396 @@ private static void handleManageLocations(Stage stage) {
         });
     }
 
-private static void handleManageLockers(Stage stage) {
-        stage.setTitle("Luggage Locker Booking System - Locker Management");
+    private static void handleManageLockers(Stage stage) {
 
-        Image lockerMenu = new Image(AppFX.class.getResourceAsStream("lockerMenu.jpg"));
-        ImageView backgroundView = new ImageView(lockerMenu);
-
-        String[] menuLabels = {
-                "VIEW ALL LOCKERS",
-                "VIEW AVAILABLE LOCKERS",
-                "VIEW OCCUPIED LOCKERS",
-                "RETURN TO MAIN MENU"
-        };
-
-        VBox leftMenu = lockerMenuButton(menuLabels, 0, 2, stage);
-        VBox rightMenu = lockerMenuButton(menuLabels, 2, 4, stage);
-
-        StackPane root = new StackPane(backgroundView, leftMenu, rightMenu);
-        StackPane.setAlignment(leftMenu, Pos.CENTER_LEFT);
-        StackPane.setAlignment(rightMenu, Pos.CENTER_RIGHT);
-
+        StackPane root = new StackPane();
         Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
 
-        backgroundView.fitWidthProperty().bind(scene.widthProperty());
-        backgroundView.fitHeightProperty().bind(scene.heightProperty());
-        backgroundView.setPreserveRatio(false);
+        ImageView bg = new ImageView(new Image(AppFX.class.getResourceAsStream("lockerMenu.jpg")));
+        bg.fitWidthProperty().bind(scene.widthProperty());
+        bg.fitHeightProperty().bind(scene.heightProperty());
+        bg.setPreserveRatio(false);
 
-        stage.setScene(scene);
-        stage.show();
-    }
+        VBox container = new VBox(20);
+        container.setPadding(new Insets(220, 40, 40, 40));
+        container.setAlignment(Pos.TOP_CENTER);
 
-private static VBox lockerMenuButton(String[] labels, int start, int end, Stage stage) {
+        Label title = new Label("Locker Records Management");
+        title.setFont(Font.font("Arial", FontWeight.BOLD, 26));
+        title.setTextFill(Color.WHITE);
 
-    VBox menu = new VBox(20);
-    menu.setPadding(new Insets(450, 320, 320, 320));
-    menu.setMaxWidth(VBox.USE_PREF_SIZE);
+        ScrollPane scroll = new ScrollPane();
+        scroll.setFitToWidth(true);
+        scroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        scroll.setPrefViewportHeight(420);
 
-    for (int i = start; i < end; i++) {
-        if (i >= labels.length) break;
+        VBox list = new VBox(12);
+        list.setPadding(new Insets(10));
+        list.setAlignment(Pos.TOP_CENTER);
 
-        String label = labels[i];
-        Button btn = new Button(label);
-
-        btn.setMinWidth(BUTTON_WIDTH);
-        btn.setMinHeight(BUTTON_HEIGHT);
-        btn.setMaxWidth(BUTTON_WIDTH);
-        btn.setAlignment(Pos.CENTER);
-        btn.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;");
-
-        switch (label) {
-
-            case "VIEW ALL LOCKERS" ->
-                    btn.setOnAction(e -> viewLockers(stage, "all"));
-
-            case "VIEW AVAILABLE LOCKERS" ->
-                    btn.setOnAction(e -> viewLockers(stage, "available"));
-
-            case "VIEW OCCUPIED LOCKERS" ->
-                    btn.setOnAction(e -> viewLockers(stage, "occupied"));
-
-            case "RETURN TO MAIN MENU" ->
-                    btn.setOnAction(e -> new AppFX().start(stage));
-        }
-
-        menu.getChildren().add(btn);
-    }
-
-    return menu;
-}
-
-
-private static void viewLockers(Stage stage, String filter) {
-    StackPane root = new StackPane();
-    Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
-
-    // --- Choose background image ---
-    String bgImageName = switch (filter.toLowerCase()) {
-        case "available" -> "viewAvailableLockers.jpg";
-        case "occupied"  -> "viewOccupiedLockers.jpg";
-        default -> "viewAllLockers.jpg";
-    };
-
-    ImageView bg = new ImageView(new Image(AppFX.class.getResourceAsStream(bgImageName)));
-    bg.fitWidthProperty().bind(scene.widthProperty());
-    bg.fitHeightProperty().bind(scene.heightProperty());
-    bg.setPreserveRatio(false);
-    root.getChildren().add(bg);
-
-    // --- Scrollable List ---
-    ScrollPane scrollPane = new ScrollPane();
-    scrollPane.setFitToWidth(true);
-    scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
-    scrollPane.setPrefViewportHeight(500);
-
-    VBox lockerList = new VBox(15);
-    lockerList.setPadding(new Insets(10));
-    lockerList.setAlignment(Pos.TOP_CENTER);
-
-    // --- Load lockers based on filter ---
-    LockerDAO lockerDAO = new LockerDAO();
-    List<Locker> lockers;
-
-    try {
-        lockers = switch (filter.toLowerCase()) {
-            case "available" -> lockerDAO.getAvailableLocker();
-            case "occupied" -> lockerDAO.getOccupiedLocker();
-            default -> lockerDAO.getAllLockers();
-        };
+        LockerDAO dao = new LockerDAO();
+        List<Locker> lockers = dao.getAllLockers();
 
         if (lockers.isEmpty()) {
-            Label noLocker = new Label("No lockers found.");
-            noLocker.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-            noLocker.setTextFill(Color.WHITE);
-            lockerList.getChildren().add(noLocker);
-        }
-        else {
-            for (Locker locker : lockers) {
-                VBox card = new VBox(5);
-                card.setPadding(new Insets(15));
-                card.setPrefWidth(900);
-                card.setStyle("""
+            Label none = new Label("No lockers found.");
+            none.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+            none.setTextFill(Color.WHITE);
+            list.getChildren().add(none);
+        } else {
+            for (Locker l : lockers) {
+
+                HBox row = new HBox(12);
+                row.setPadding(new Insets(12));
+                row.setAlignment(Pos.CENTER_LEFT);
+                row.setPrefWidth(900);
+                row.setStyle("""
                 -fx-background-color: rgba(255,255,255,0.85);
                 -fx-background-radius: 12;
                 -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.25), 10, 0, 0, 5);
             """);
 
-                Label id = new Label("Locker ID: " + locker.getLockerID());
-                Label type = new Label("Locker Type ID: " + locker.getLockerTypeID());
-                Label loc = new Label("Location ID: " + locker.getLocationID());
-                Label postal = new Label("Postal Code: " + locker.getLocationPostalCode());
-                Label status = new Label("Status: " + locker.getLockerStatus());
-
-                id.setFont(Font.font("Arial", FontWeight.BOLD, 14));
-                status.setFont(Font.font("Arial", FontWeight.BOLD, 14));
-
-                status.setTextFill(
-                        switch (locker.getLockerStatus().toLowerCase()) {
-                            case "available" -> Color.GREEN;
-                            case "occupied" -> Color.RED;
-                            case "reserved" -> Color.BLUE;
-                            default -> Color.ORANGE;
-                        }
+                Label info = new Label(
+                        "ID: " + l.getLockerID() +
+                                " | Type: " + l.getLockerTypeID() +
+                                " | Location: " + l.getLocationID() +
+                                " | Postal: " + l.getLocationPostalCode() +
+                                " | Status: " + l.getLockerStatus()
                 );
+                info.setFont(Font.font("Arial", 14));
+                info.setTextFill(Color.BLACK);
 
-                for (Label l : List.of(id, type, loc, postal)) {
-                    l.setTextFill(Color.BLACK);
-                }
+                Region spacer = new Region();
+                HBox.setHgrow(spacer, Priority.ALWAYS);
 
-                card.getChildren().addAll(id, type, loc, postal, status);
-                lockerList.getChildren().add(card);
+                Button editBtn = new Button("Edit");
+                editBtn.setStyle("-fx-background-color:#007bff; -fx-text-fill:white;");
+                editBtn.setOnAction(e -> editLocker(stage, l.getLockerID()));
+
+                Button delBtn = new Button("Delete");
+                delBtn.setStyle("-fx-background-color:#d9534f; -fx-text-fill:white;");
+                delBtn.setOnAction(e -> {
+                    Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+                            "Delete Locker ID: " + l.getLockerID() + "?");
+                    if (confirm.showAndWait().get() == ButtonType.OK) {
+                        if (dao.deleteLocker(l.getLockerID())) {
+                            handleManageLockers(stage);  // refresh
+                        }
+                    }
+                });
+
+                row.getChildren().addAll(info, spacer, editBtn, delBtn);
+                list.getChildren().add(row);
             }
         }
-    } catch (Exception e) {
-        e.printStackTrace();
+
+        scroll.setContent(list);
+
+        Button addBtn = new Button("Add Locker");
+        addBtn.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        addBtn.setStyle("-fx-background-color:#28a745; -fx-text-fill:white;");
+        addBtn.setOnAction(e -> addLocker(stage));
+
+        Button back = new Button("Back");
+        back.setStyle("-fx-background-color:#003366; -fx-text-fill:white;");
+        back.setOnAction(e -> new AppFX().start(stage));
+
+        container.getChildren().addAll(title, scroll, addBtn, back);
+
+        root.getChildren().addAll(bg, container);
+        stage.setScene(scene);
+        stage.show();
     }
 
-    scrollPane.setContent(lockerList);
+    private static void addLocker(Stage stage) {
 
-    // --- Back Button ---
-    Button backBtn = new Button("Return to Locker Menu");
-    backBtn.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-    backBtn.setStyle("-fx-background-color:#003366; -fx-text-fill:white; -fx-background-radius:8;");
-    backBtn.setPrefSize(220, 40);
-    backBtn.setOnAction(e -> handleManageLockers(stage));
+        // --- Background Image ---
+        Image bgImage = new Image(AppFX.class.getResourceAsStream("lockerMenu.jpg"));
+        ImageView bgView = new ImageView(bgImage);
+        bgView.setPreserveRatio(false);
 
-    // --- Layout ---
-    VBox content = new VBox(30, scrollPane, backBtn);
-    content.setAlignment(Pos.TOP_CENTER);
-    content.setPadding(new Insets(230, 20, 40, 20));
+        StackPane root = new StackPane();
+        Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
 
-    root.getChildren().add(content);
-    StackPane.setAlignment(content, Pos.TOP_CENTER);
+        bgView.fitWidthProperty().bind(scene.widthProperty());
+        bgView.fitHeightProperty().bind(scene.heightProperty());
+        root.getChildren().add(bgView);
 
-    stage.setScene(scene);
-    stage.setTitle("Locker Management - " + filter.substring(0, 1).toUpperCase() + filter.substring(1));
-    stage.show();
-}
+        VBox panel = new VBox(15);
+        panel.setAlignment(Pos.CENTER);
+        panel.setPadding(new Insets(35));
+        panel.setPrefWidth(500);
 
+        panel.setStyle("""
+        -fx-background-color: rgba(255,255,255,0.90);
+        -fx-background-radius: 15;
+        -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.25), 12, 0, 0, 4);
+    """);
 
-private static void handleManageLockerLocations(){
+        Label title = new Label("Add New Locker");
+        title.setFont(Font.font("Arial", FontWeight.BOLD, 28));
+        title.setTextFill(Color.BLACK);
 
+        String fieldStyle = """
+        -fx-font-size: 16px;
+        -fx-background-radius: 8;
+        -fx-padding: 10;
+        -fx-border-color: #aaaaaa;
+        -fx-border-radius: 8;
+    """;
+
+        TextField typeField = new TextField();
+        typeField.setPromptText("Locker Type ID");
+        typeField.setPrefHeight(45);
+        typeField.setStyle(fieldStyle);
+
+        TextField locationField = new TextField();
+        locationField.setPromptText("Location ID");
+        locationField.setPrefHeight(45);
+        locationField.setStyle(fieldStyle);
+
+        TextField postalField = new TextField();
+        postalField.setPromptText("Postal Code");
+        postalField.setPrefHeight(45);
+        postalField.setStyle(fieldStyle);
+
+        Label errorLabel = new Label();
+        errorLabel.setTextFill(Color.RED);
+        errorLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+
+        Button saveButton = new Button("Save Locker");
+        saveButton.setPrefSize(200, 45);
+        saveButton.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        saveButton.setStyle("-fx-background-color:#28a745; -fx-text-fill:white; -fx-background-radius:10;");
+
+        saveButton.setOnAction(e -> {
+
+            errorLabel.setText(""); // Clear errors
+
+            String typeText = typeField.getText().trim();
+            String locText = locationField.getText().trim();
+            String postalText = postalField.getText().trim();
+
+            boolean valid = true;
+
+            // ---- Validation for typeField ----
+            if (typeText.isEmpty()) {
+                errorLabel.setText("Locker Type ID cannot be empty.");
+                typeField.setStyle(fieldStyle + "; -fx-border-color:red; -fx-border-width:2;");
+                valid = false;
+            } else if (!typeText.matches("\\d+")) {
+                errorLabel.setText("Locker Type ID must be numeric.");
+                typeField.setStyle(fieldStyle + "; -fx-border-color:red; -fx-border-width:2;");
+                valid = false;
+            } else {
+                typeField.setStyle(fieldStyle);
+            }
+
+            // ---- Validation for locationField ----
+            if (locText.isEmpty()) {
+                errorLabel.setText("Location ID cannot be empty.");
+                locationField.setStyle(fieldStyle + "; -fx-border-color:red; -fx-border-width:2;");
+                valid = false;
+            } else if (!locText.matches("\\d+")) {
+                errorLabel.setText("Location ID must be numeric.");
+                locationField.setStyle(fieldStyle + "; -fx-border-color:red; -fx-border-width:2;");
+                valid = false;
+            } else {
+                locationField.setStyle(fieldStyle);
+            }
+
+            // ---- Validation for postalField ----
+            if (postalText.isEmpty()) {
+                errorLabel.setText("Postal Code cannot be empty.");
+                postalField.setStyle(fieldStyle + "; -fx-border-color:red; -fx-border-width:2;");
+                valid = false;
+            } else if (!postalText.matches("\\d+")) {
+                errorLabel.setText("Postal Code must be numeric.");
+                postalField.setStyle(fieldStyle + "; -fx-border-color:red; -fx-border-width:2;");
+                valid = false;
+            } else {
+                postalField.setStyle(fieldStyle);
+            }
+
+            if (!valid) return;
+
+            int lockerTypeID = Integer.parseInt(typeText);
+            int locationID = Integer.parseInt(locText);
+            int postalCode = Integer.parseInt(postalText);
+
+            Locker newLocker = new Locker(lockerTypeID, locationID, postalCode);
+
+            LockerDAO lockerDAO = new LockerDAO();
+            if (lockerDAO.addLocker(newLocker)) {
+                handleManageLockers(stage);
+            } else {
+                errorLabel.setText("Failed to add locker. Please check your inputs.");
+            }
+        });
+
+        Button backButton = new Button("Back");
+        backButton.setPrefSize(200, 40);
+        backButton.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        backButton.setStyle("-fx-background-color:#b30000; -fx-text-fill:white; -fx-background-radius:10;");
+        backButton.setOnAction(e -> handleManageLockers(stage));
+
+        panel.getChildren().addAll(title, typeField, locationField, postalField,
+                errorLabel, saveButton, backButton);
+
+        root.getChildren().add(panel);
+        StackPane.setAlignment(panel, Pos.CENTER);
+
+        stage.setScene(scene);
+        stage.setTitle("Add Locker");
+        stage.show();
+    }
+
+    private static void editLocker(Stage stage, int lockerID) {
+
+        LockerDAO lockerDAO = new LockerDAO();
+        Locker locker = lockerDAO.getLockerByID(lockerID);
+
+        Image bgImage = new Image(AppFX.class.getResourceAsStream("lockerMenu.jpg"));
+        ImageView bgView = new ImageView(bgImage);
+        bgView.setPreserveRatio(false);
+
+        StackPane root = new StackPane();
+        Scene scene = new Scene(root, INITIAL_WIDTH, INITIAL_HEIGHT);
+
+        bgView.fitWidthProperty().bind(scene.widthProperty());
+        bgView.fitHeightProperty().bind(scene.heightProperty());
+        root.getChildren().add(bgView);
+
+        VBox card = new VBox(15);
+        card.setAlignment(Pos.CENTER);
+        card.setPadding(new Insets(40));
+        card.setPrefWidth(520);
+
+        card.setStyle("""
+        -fx-background-color: rgba(255,255,255,0.92);
+        -fx-background-radius: 15;
+        -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.25), 12, 0, 0, 4);
+    """);
+
+        Label title = new Label("Edit Locker");
+        title.setFont(Font.font("Arial", FontWeight.BOLD, 30));
+
+        String tfStyle = """
+        -fx-font-size: 16px;
+        -fx-background-radius: 8;
+        -fx-border-radius: 8;
+        -fx-padding: 10;
+        -fx-border-color: #aaaaaa;
+    """;
+
+        TextField typeField = new TextField(String.valueOf(locker.getLockerTypeID()));
+        typeField.setPromptText("Locker Type ID");
+        typeField.setPrefSize(500, 50);
+        typeField.setStyle(tfStyle);
+
+        TextField locationField = new TextField(String.valueOf(locker.getLocationID()));
+        locationField.setPromptText("Location ID");
+        locationField.setPrefSize(500, 50);
+        locationField.setStyle(tfStyle);
+
+        TextField postalField = new TextField(String.valueOf(locker.getLocationPostalCode()));
+        postalField.setPromptText("Postal Code");
+        postalField.setPrefSize(500, 50);
+        postalField.setStyle(tfStyle);
+
+        ComboBox<String> statusCombo = new ComboBox<>();
+        statusCombo.getItems().addAll("Available", "Occupied", "Reserved");
+        statusCombo.setValue(locker.getLockerStatus());
+        statusCombo.setPrefHeight(50);
+        statusCombo.setPrefWidth(500);
+        statusCombo.setStyle("-fx-font-size: 16px; -fx-background-radius: 8;");
+
+        Label errorLabel = new Label();
+        errorLabel.setTextFill(Color.RED);
+        errorLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+
+        Button updateButton = new Button("Update Locker");
+        updateButton.setPrefSize(220, 45);
+        updateButton.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        updateButton.setStyle("-fx-background-color:#007bff; -fx-text-fill:white; -fx-background-radius:10;");
+
+        updateButton.setOnAction(e -> {
+
+            errorLabel.setText("");
+
+            String typeText = typeField.getText().trim();
+            String locText = locationField.getText().trim();
+            String postalText = postalField.getText().trim();
+
+            boolean valid = true;
+
+            // Validate type
+            if (typeText.isEmpty()) {
+                errorLabel.setText("Locker Type ID cannot be empty.");
+                typeField.setStyle(tfStyle + "; -fx-border-color:red; -fx-border-width:2;");
+                valid = false;
+            } else if (!typeText.matches("\\d+")) {
+                errorLabel.setText("Locker Type ID must be numeric.");
+                typeField.setStyle(tfStyle + "; -fx-border-color:red; -fx-border-width:2;");
+                valid = false;
+            } else {
+                typeField.setStyle(tfStyle);
+            }
+
+            // Validate location
+            if (locText.isEmpty()) {
+                errorLabel.setText("Location ID cannot be empty.");
+                locationField.setStyle(tfStyle + "; -fx-border-color:red; -fx-border-width:2;");
+                valid = false;
+            } else if (!locText.matches("\\d+")) {
+                errorLabel.setText("Location ID must be numeric.");
+                locationField.setStyle(tfStyle + "; -fx-border-color:red; -fx-border-width:2;");
+                valid = false;
+            } else {
+                locationField.setStyle(tfStyle);
+            }
+
+            // Validate postal
+            if (postalText.isEmpty()) {
+                errorLabel.setText("Postal Code cannot be empty.");
+                postalField.setStyle(tfStyle + "; -fx-border-color:red; -fx-border-width:2;");
+                valid = false;
+            } else if (!postalText.matches("\\d+")) {
+                errorLabel.setText("Postal Code must be numeric.");
+                postalField.setStyle(tfStyle + "; -fx-border-color:red; -fx-border-width:2;");
+                valid = false;
+            } else {
+                postalField.setStyle(tfStyle);
+            }
+
+            if (!valid) return;
+
+            locker.setLockerTypeID(Integer.parseInt(typeText));
+            locker.setLocationID(Integer.parseInt(locText));
+            locker.setLocationPostalCode(Integer.parseInt(postalText));
+            locker.setLockerStatus(statusCombo.getValue());
+
+            if (lockerDAO.updateLocker(locker)) {
+                handleManageLockers(stage);
+            } else {
+                errorLabel.setText("Failed to update locker. Please try again.");
+            }
+        });
+
+        Button backButton = new Button("Back");
+        backButton.setPrefSize(220, 40);
+        backButton.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        backButton.setStyle("-fx-background-color:#b30000; -fx-text-fill:white; -fx-background-radius:10;");
+        backButton.setOnAction(e -> handleManageLockers(stage));
+
+        card.getChildren().addAll(title, typeField, locationField, postalField, statusCombo, errorLabel,
+                updateButton, backButton);
+
+        root.getChildren().add(card);
+        StackPane.setAlignment(card, Pos.CENTER);
+
+        stage.setScene(scene);
+        stage.setTitle("Edit Locker");
+        stage.show();
     }
 
 private static void handleBooking(Stage stage) {
@@ -2938,10 +3148,10 @@ private static void viewAllCancellations(Stage stage) {
                     booking.setBookingStatus("Cancelled");
                     bookingDAO.updateBooking(booking);
 
-                    // 5. Update locker availability
+                    //Update locker availability
                     lockerDAO.updateLockerStatus(booking.getLockerID(), "Available");
 
-                    // 6. Record cancellation
+                    //Record cancellation
                     cancellationDAO.addCancellation(
                             booking.getBookingReference(),
                             now.format(Booking.FORMATTER),
