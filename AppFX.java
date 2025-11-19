@@ -4163,6 +4163,9 @@ private static void viewAllCancellations(Stage stage) {
 
         List<LockerTransfer> transfers = LockerTransferDAO.getAllTransfers();
 
+        // --- Date formatter ---
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
         if (transfers.isEmpty()) {
             Label noTransfers = new Label("No transfers found in the database.");
             noTransfers.setFont(Font.font("Arial", FontWeight.BOLD, 16));
@@ -4184,11 +4187,12 @@ private static void viewAllCancellations(Stage stage) {
                 // --- Labels ---
                 Label idLbl = new Label("Transfer ID: " + t.getTransferID());
                 Label bookingLbl = new Label("Booking Reference: " + t.getBookingReference());
-                Label dateLbl = new Label("Date: " + t.getTransferDate());
+                Label dateLbl = new Label("Date: " + t.getTransferDate().format(formatter));
                 Label oldLockerLbl = new Label("Old Locker ID: " + t.getOldLockerID());
                 Label newLockerLbl = new Label("New Locker ID: " + t.getNewLockerID());
                 Label adjLbl = new Label("Adjustment Amount: ₱" + t.getAdjustmentAmount());
 
+                // --- Font setup ---
                 idLbl.setFont(Font.font("Arial", FontWeight.BOLD, 14));
                 bookingLbl.setFont(Font.font("Arial", 14));
                 dateLbl.setFont(Font.font("Arial", 14));
@@ -4196,6 +4200,7 @@ private static void viewAllCancellations(Stage stage) {
                 newLockerLbl.setFont(Font.font("Arial", 14));
                 adjLbl.setFont(Font.font("Arial", 14));
 
+                // --- Text color ---
                 idLbl.setTextFill(Color.BLACK);
                 bookingLbl.setTextFill(Color.BLACK);
                 dateLbl.setTextFill(Color.BLACK);
@@ -4232,7 +4237,7 @@ private static void viewAllCancellations(Stage stage) {
         // --- Layout positioning ---
         VBox content = new VBox(30, scrollPane, backBtn);
         content.setAlignment(Pos.TOP_CENTER);
-        content.setPadding(new Insets(230, 20, 40, 20)); // same vertical offset as viewAllLockerTypes()
+        content.setPadding(new Insets(230, 20, 40, 20));
 
         root.getChildren().add(content);
         StackPane.setAlignment(content, Pos.TOP_CENTER);
@@ -4241,7 +4246,6 @@ private static void viewAllCancellations(Stage stage) {
         stage.setTitle("View All Locker Transfers");
         stage.show();
     }
-
 
     private static void searchTransferByID(Stage stage) {
         // --- Background setup ---
