@@ -9,7 +9,6 @@ public class Payment {
     private String paymentStatus;
     private Timestamp paymentDate;
 
-
     public Payment(int paymentID, String bookingReference, int userID, double paymentAmount,
                    String paymentMethod, String paymentStatus, Timestamp paymentDate) {
         this.paymentID = paymentID;

@@ -6,7 +6,7 @@ public class PaymentDAO {
 
     private static final String URL = "jdbc:mysql://localhost:3306/luggage_locker_db";
     private static final String USER = "root";
-    private static final String PASSWORD = "Auq_n49s.xq#";
+    private static final String PASSWORD = "Raeka.101482";
 
     // VIEW ALL PAYMENTS
     public List<Payment> getAllPayments() {
@@ -67,27 +67,6 @@ public class PaymentDAO {
         return payment;
     }
 
-    public boolean insertPayment(Payment payment) {
-        String query = "INSERT INTO Payment (bookingReference, userID, paymentAmount, paymentMethod, paymentStatus, paymentDate) " +
-                "VALUES (?, ?, ?, ?, ?, NOW())";
-
-        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
-             PreparedStatement ps = conn.prepareStatement(query)) {
-
-            ps.setString(1, payment.getBookingReference());
-            ps.setInt(2, payment.getUserID());
-            ps.setDouble(3, payment.getPaymentAmount());
-            ps.setString(4, payment.getPaymentMethod());
-            ps.setString(5, payment.getPaymentStatus());
-
-            return ps.executeUpdate() > 0;
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
     public Payment addPayment(Payment payment) {
         String sql = "INSERT INTO Payment (bookingReference, userID, paymentAmount, paymentMethod, paymentStatus, paymentDate) VALUES (?, ?, ?, ?, ?, ?)";
 
@@ -103,7 +82,6 @@ public class PaymentDAO {
 
             ps.executeUpdate();
 
-            // Retrieve the generated paymentID
             ResultSet rs = ps.getGeneratedKeys();
             if (rs.next()) {
                 int generatedID = rs.getInt(1);
@@ -114,7 +92,7 @@ public class PaymentDAO {
             e.printStackTrace();
         }
 
-        return payment; // now with correct paymentID
+        return payment;
     }
 
 }
