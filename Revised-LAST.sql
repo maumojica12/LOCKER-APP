@@ -166,7 +166,8 @@ INSERT INTO User (firstName, lastName, userContact, userEmail) VALUES
 ('Daniel', 'Pamintuan', '09172233445', 'daniel.pamintuan@gmail.com'),
 ('Jerone', 'Juarez', '09173344556', 'jerone.juarez@gmail.com'),
 ('John', 'Doe', '09174455667', 'john.doe@gmail.com'),
-('Jane', 'Doe', '09175566778', 'jane.doe@gmail.com');
+('Jane', 'Doe', '09175566778', 'jane.doe@gmail.com'),
+('Frank', 'Gallagher', '09453224096', 'frank.gal@gmail.com');
 
 -- LockerType
 INSERT INTO LockerType (lockerTypeSize, lockerMaxWeight, lockerRate) VALUES
@@ -190,7 +191,8 @@ INSERT INTO Locker (lockerTypeID, locationID, lockerStatus) VALUES
 (3, 2, 'Available'),
 (3, 2, 'Available'),
 (3, 2, 'Available'),
-(3, 2, 'Available');
+(3, 2, 'Available'),
+(1, 1, 'Available');
 
 #DONE
 INSERT INTO Booking
@@ -205,12 +207,14 @@ VALUES
 ('BKG-0007', 7, 7, 180.00, '2025-11-25 12:25:00', '2025-11-25 14:35:00', 'Checked-Out', '2025-11-25 13:40:00', '2025-11-25 19:30:00'),
 ('BKG-0008', 8, 8, 180.00, '2025-11-25 12:30:49', '2025-11-26 10:00:49', 'Cancelled', NULL, NULL),
 ('BKG-0009', 9, 9, 180.00,  '2025-11-25 12:35:26', '2025-11-25 15:15:26', 'Cancelled', NULL, NULL),
-('BKG-0010', 10, 10, 180.00, '2025-11-25 12:40:00', '2025-11-26 19:30:00', 'Cancelled', NULL, NULL);
+('BKG-0010', 10, 10, 180.00, '2025-11-25 12:40:00', '2025-11-26 19:30:00', 'Cancelled', NULL, NULL),
+('BKG-0011', 11, 11, 80.00, '2025-11-25 12:45:00', '2025-11-25 14:30:00', 'Checked-Out', '2025-11-25 13:40:00', '2025-11-25 21:40:00');
 
 -- Payment
 INSERT INTO Payment (paymentID, bookingReference, userID, paymentAmount, paymentMethod, paymentStatus, paymentDate) VALUES
 (1, 'BKG-0006',6, 120.0,  'E-wallet', 'Paid', '2025-11-25 20:30:00'),
-(2, 'BKG-0007',7, 180.0, 'Credit Card', 'Paid', '2025-11-25 19:30:00');
+(2, 'BKG-0007',7, 180.0, 'Credit Card', 'Paid', '2025-11-25 19:30:00'),
+(3, 'BKG-0011',11, 80.0, 'Credit Card', 'Paid', '2025-11-25 21:40:00');
 
 -- Cancellation DONE
 INSERT INTO Cancellation (bookingReference, cancelDate, reason, refundFee) VALUES
