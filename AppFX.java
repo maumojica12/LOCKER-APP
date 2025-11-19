@@ -1591,7 +1591,7 @@ private static void handleManageLocations(Stage stage) {
         ScrollPane scrollPane = new ScrollPane();
         scrollPane.setFitToWidth(true);
         scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
-        scrollPane.setPrefViewportHeight(500); // same visible scroll area height as viewAllUser()
+        scrollPane.setPrefViewportHeight(500);
 
         VBox lockerList = new VBox(15);
         lockerList.setPadding(new Insets(10));
@@ -1607,16 +1607,15 @@ private static void handleManageLocations(Stage stage) {
             lockerList.getChildren().add(noLocker);
         } else {
             for (LockerType type : types) {
-                // --- Card container ---
                 VBox card = new VBox(5);
                 card.setPadding(new Insets(15));
-                card.setPrefWidth(900); // same width as viewAllUser()
+                card.setPrefWidth(900); 
                 card.setStyle(
                         "-fx-background-color: rgba(255,255,255,0.85); " +
                                 "-fx-background-radius: 12; " +
                                 "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.25), 10, 0, 0, 5);"
                 );
-                card.setAlignment(Pos.CENTER_LEFT); // consistent left alignment
+                card.setAlignment(Pos.CENTER_LEFT); 
 
                 // --- Labels ---
                 Label idLbl = new Label("Locker Type ID: " + type.getLockerTypeID());
@@ -1634,7 +1633,6 @@ private static void handleManageLocations(Stage stage) {
                 maxWeightLbl.setTextFill(Color.BLACK);
                 rateLbl.setTextFill(Color.BLACK);
 
-                // --- Consistent label spacing ---
                 VBox.setMargin(idLbl, new Insets(0, 0, 0, 10));
                 VBox.setMargin(sizeLbl, new Insets(0, 0, 0, 10));
                 VBox.setMargin(maxWeightLbl, new Insets(0, 0, 0, 10));
@@ -1658,7 +1656,7 @@ private static void handleManageLocations(Stage stage) {
         // --- Layout positioning ---
         VBox content = new VBox(30, scrollPane, backBtn);
         content.setAlignment(Pos.TOP_CENTER);
-        content.setPadding(new Insets(230, 20, 40, 20)); // same vertical offset as viewAllUser()
+        content.setPadding(new Insets(230, 20, 40, 20));
 
         root.getChildren().add(content);
         StackPane.setAlignment(content, Pos.TOP_CENTER);
@@ -4098,7 +4096,6 @@ private static void viewAllCancellations(Stage stage) {
             transferList.getChildren().add(noTransfers);
         } else {
             for (LockerTransfer t : transfers) {
-                // --- Card container ---
                 VBox card = new VBox(5);
                 card.setPadding(new Insets(15));
                 card.setPrefWidth(900);
@@ -4117,7 +4114,6 @@ private static void viewAllCancellations(Stage stage) {
                 Label newLockerLbl = new Label("New Locker ID: " + t.getNewLockerID());
                 Label adjLbl = new Label("Adjustment Amount: ₱" + t.getAdjustmentAmount());
 
-                // --- Font setup ---
                 idLbl.setFont(Font.font("Arial", FontWeight.BOLD, 14));
                 bookingLbl.setFont(Font.font("Arial", 14));
                 dateLbl.setFont(Font.font("Arial", 14));
@@ -4125,7 +4121,6 @@ private static void viewAllCancellations(Stage stage) {
                 newLockerLbl.setFont(Font.font("Arial", 14));
                 adjLbl.setFont(Font.font("Arial", 14));
 
-                // --- Text color ---
                 idLbl.setTextFill(Color.BLACK);
                 bookingLbl.setTextFill(Color.BLACK);
                 dateLbl.setTextFill(Color.BLACK);
@@ -4133,7 +4128,6 @@ private static void viewAllCancellations(Stage stage) {
                 newLockerLbl.setTextFill(Color.BLACK);
                 adjLbl.setTextFill(Color.BLACK);
 
-                // --- Consistent label spacing ---
                 VBox.setMargin(idLbl, new Insets(0, 0, 0, 10));
                 VBox.setMargin(bookingLbl, new Insets(0, 0, 0, 10));
                 VBox.setMargin(dateLbl, new Insets(0, 0, 0, 10));
@@ -4159,7 +4153,6 @@ private static void viewAllCancellations(Stage stage) {
         backBtn.setStyle("-fx-background-color: #003366; -fx-text-fill: white; -fx-background-radius: 8;");
         backBtn.setOnAction(e -> handleTransfers(stage));
 
-        // --- Layout positioning ---
         VBox content = new VBox(30, scrollPane, backBtn);
         content.setAlignment(Pos.TOP_CENTER);
         content.setPadding(new Insets(230, 20, 40, 20));
