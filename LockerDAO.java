@@ -82,53 +82,6 @@ public class LockerDAO {
         return lockers;
     }
 
-    //Get All Occupied Lockers
-    public List<Locker> getOccupiedLocker() {
-        List<Locker> lockers = new ArrayList<>();
-        String query = "SELECT * FROM Locker WHERE lockerStatus = 'Occupied'";
-
-        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(query)) {
-
-            while (rs.next()) {
-                lockers.add(new Locker(
-                        rs.getInt("lockerID"),
-                        rs.getInt("lockerTypeID"),
-                        rs.getInt("locationID"),
-                        rs.getString("lockerStatus")
-                ));
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return lockers;
-    }
-    //get Reserved Lockers
-    public List<Locker> getReservedLocker() {
-        List<Locker> lockers = new ArrayList<>();
-        String query = "SELECT * FROM Locker WHERE lockerStatus = 'Reserved'";
-
-        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(query)) {
-
-            while (rs.next()) {
-                lockers.add(new Locker(
-                        rs.getInt("lockerID"),
-                        rs.getInt("lockerTypeID"),
-                        rs.getInt("locationID"),
-                        rs.getString("lockerStatus")
-                ));
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return lockers;
-    }
-
     //Update Locker Status
     public boolean updateLockerStatus(int lockerID, String lockerStatus){
         String query = "UPDATE Locker SET lockerStatus = ? WHERE lockerID = ?";
@@ -146,7 +99,6 @@ public class LockerDAO {
         }
         return success;
     }
-
     // Get Available Lockers by Location
     public List<Locker> getAvailableLockersByLocation(int locationID) {
         List<Locker> lockers = new ArrayList<>();
@@ -177,7 +129,6 @@ public class LockerDAO {
 
         return lockers;
     }
-
     // Add Locker
     public boolean addLocker(Locker locker) {
         String sql = """
@@ -198,7 +149,6 @@ public class LockerDAO {
             return false;
         }
     }
-
     // Update Locker
     public boolean updateLocker(Locker locker) {
         String sql = """
@@ -222,7 +172,6 @@ public class LockerDAO {
             return false;
         }
     }
-
     // Delete Locker
     public boolean deleteLocker(int lockerID) {
         String sql = "DELETE FROM Locker WHERE lockerID = ?";

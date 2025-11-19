@@ -29,7 +29,6 @@ public class CancellationDAO {
         }
     }
 
-
     public List<Cancellation> getAllCancellations() {
         List<Cancellation> list = new ArrayList<>();
         String sql = "SELECT * FROM cancellation";
