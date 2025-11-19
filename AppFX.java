@@ -5114,6 +5114,26 @@ private static void canceledBookingsReport(Stage stage) {
             new TableColumn<>("Reason");
     colReason.setCellValueFactory(new PropertyValueFactory<>("reason"));
 
+    colReason.setCellFactory(tc -> {
+        TableCell<CanceledBookingsReport, String> cell = new TableCell<>() {
+            private final Text text = new Text();
+
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    text.setText(item);
+                    text.wrappingWidthProperty().bind(colReason.widthProperty().subtract(10)); // padding
+                    setGraphic(text);
+                }
+            }
+        };
+        return cell;
+    });
+
     TableColumn<CanceledBookingsReport, Double> colRefund =
             new TableColumn<>("Refund Amount");
     colRefund.setCellValueFactory(new PropertyValueFactory<>("refundAmount"));
