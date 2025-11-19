@@ -234,10 +234,6 @@ INSERT INTO Cancellation (bookingReference, cancelDate, reason, refundFee) VALUE
 ('BKG-0003', NOW(), 'User cancelled before check-in', 100.00),
 ('BKG-0007', NOW(), 'User cancelled', 0);
 
--- Locker Transfer
-INSERT INTO LockerTransfer (bookingReference, transferDate, adjustmentAmount, oldLockerID, newLockerID) VALUES
-('BKG-0005', '2025-11-18 19:10:00' , 80.00, 5, 7);
-
 SELECT * FROM User;
 SELECT * FROM LockerType;
 SELECT * FROM Location;
