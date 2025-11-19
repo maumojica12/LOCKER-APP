@@ -1,5 +1,6 @@
 public class RevenueReport {
- private String category;     // locker size or location name
+
+    private String category;     // locker size or location name
     private double totalRevenue;
 
     public RevenueReport(String category, double totalRevenue) {

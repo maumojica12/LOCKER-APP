@@ -1,4 +1,3 @@
-import java.time.temporal.ChronoUnit;
 import java.time.format.DateTimeFormatter;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -65,15 +64,14 @@ public class BookingService {
         if (!lockerUpdated) {
             System.out.println("Warning: Failed to update locker status to Reserved.");
         }
-
         System.out.println("Reservation Confirmed!");
         System.out.println("Booking Reference: " + booking.getBookingReference());
         return booking;
 }
 
-    // --- CHECK-IN ---
-    public boolean checkIn(String bookingReference) {  // changed to String
-        Booking booking = bookingDAO.getBookingByReference(bookingReference); // now correct
+    // Check-In
+    public boolean checkIn(String bookingReference) {  
+        Booking booking = bookingDAO.getBookingByReference(bookingReference); 
         if (booking == null) {
             System.out.println("Booking not found.");
             return false;
@@ -82,7 +80,7 @@ public class BookingService {
         // Update locker status
         lockerDAO.updateLockerStatus(booking.getLockerID(), "Occupied");
 
-        // Update booking
+        // Update booking status
         booking.setBookingStatus("Checked-in");
         booking.setCheckInTime(LocalDateTime.now().toString());
 
@@ -96,7 +94,7 @@ public class BookingService {
         }
     }
 
-    // --- VIEW AVAILABLE LOCKERS ---
+    // VIEW AVAILABLE LOCKERS 
     public void viewAvailableLockers() {
         List<Locker> availableLockers = lockerDAO.getAvailableLocker();
         System.out.println("Available Lockers:");
@@ -105,22 +103,18 @@ public class BookingService {
         }
     }
 
-    // --- Automatic handling of no-shows on or before selected reservation
-        public void processNoShowBookings() {
+    // Automatic handling of no-shows on or before selected reservation
+    public void processNoShowBookings() {
         // Formatter for your DB date format
         DateTimeFormatter dbFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         List<Booking> pendingBookings = bookingDAO.getPendingCheckInBookings();
         LocalDateTime now = LocalDateTime.now();
 
         for (Booking booking : pendingBookings) {
-            // Parse reservation date from DB format
             LocalDateTime selectedTime = LocalDateTime.parse(booking.getSelectedReservationDate(), dbFormatter);
 
             if (selectedTime.isBefore(now)) { 
-                // Update locker status
                 lockerDAO.updateLockerStatus(booking.getLockerID(), "Available");
-
-                // Update booking status
                 booking.setBookingStatus("Cancelled");
                 bookingDAO.updateBookingStatus(booking.getBookingReference(), "Cancelled");
 
@@ -130,7 +124,7 @@ public class BookingService {
                 // Add cancellation record
                 cancellationDAO.addCancellation(
                     booking.getBookingReference(),
-                    cancelDate.format(dbFormatter), // Format for DB
+                    cancelDate.format(dbFormatter),
                     "Customer failed to check-in on Reserved date and time",
                     0
                 );

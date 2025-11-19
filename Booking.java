@@ -47,7 +47,6 @@ public class Booking {
         this.selectedReservationDate = selectedReservationDate;
     }
 
-    // --- Getters ---
     public String getBookingReference() { return bookingReference; }
     public int getUserID() { return userID; }
     public int getLockerID() { return lockerID; }
@@ -58,14 +57,13 @@ public class Booking {
     public String getCheckInTime() { return checkInTime; }
     public String getCheckOutTime() { return checkOutTime; }
 
-    // --- Setters ---
     public void setBookingReference(String bookingReference) { this.bookingReference = bookingReference; }
     public void setBookingStatus(String bookingStatus) { this.bookingStatus = bookingStatus; }
     public void setCheckInTime(String checkInTime) { this.checkInTime = checkInTime; }
     public void setCheckOutTime(String checkOutTime) { this.checkOutTime = checkOutTime; }
     public void setSelectedReservationDate(String selectedReservationDate) { this.selectedReservationDate = selectedReservationDate; } 
 
-    // --- Convert string to LocalDateTime ---
+    // Convert string to LocalDateTime 
     public LocalDateTime getCheckInDateTime() {
         if (checkInTime == null || checkInTime.isEmpty()) return null;
         return LocalDateTime.parse(checkInTime, FORMATTER);
@@ -81,7 +79,7 @@ public class Booking {
         return LocalDateTime.parse(selectedReservationDate, FORMATTER);
     }
 
-    // --- In Booking class ---
+    // In Booking class 
     public double calculateDurationHours() {
         LocalDateTime in = getCheckInDateTime();
         LocalDateTime out = getCheckOutDateTime();
