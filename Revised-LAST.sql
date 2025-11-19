@@ -34,7 +34,6 @@ CREATE TABLE Locker(
 		lockerID INT AUTO_INCREMENT PRIMARY KEY,
 		lockerTypeID INT NOT NULL,
 		locationID INT NOT NULL,
-		locationPostalCode INT NOT NULL,
 		lockerStatus ENUM('Available','Reserved','Occupied') DEFAULT 'Available',
 		FOREIGN KEY (lockerTypeID) REFERENCES LockerType(lockerTypeID),
 		FOREIGN KEY (locationID) REFERENCES Location(locationID)
@@ -181,17 +180,17 @@ INSERT INTO Location (locationName, locationCity, locationPostalCode, contact) V
 ('DLSU Laguna', 'Biñan', '4024', '09170002222');
 
 -- Locker
-INSERT INTO Locker (lockerTypeID, locationID, locationPostalCode, lockerStatus) VALUES
-(1, 1, '1004', 'Available'),
-(1, 1, '1004', 'Available'),
-(1, 2, '4024', 'Available'),
-(2, 1, '1004', 'Available'),
-(2, 1, '1004', 'Occupied'),
-(2, 2, '4024', 'Available'),
-(3, 2, '4024', 'Available'),
-(3, 1, '1004', 'Available'),
-(3, 1, '1004', 'Available'),
-(3, 2, '4024', 'Available');
+INSERT INTO Locker (lockerTypeID, locationID, lockerStatus) VALUES
+(1, 1,'Available'),
+(1, 1, 'Available'),
+(1, 2, 'Available'),
+(2, 1, 'Available'),
+(2, 1, 'Occupied'),
+(2, 2, 'Available'),
+(3, 2, 'Available'),
+(3, 1, 'Available'),
+(3, 1, 'Available'),
+(3, 2, 'Available');
 
 INSERT INTO Booking 
 (bookingReference, userID, lockerID, reservationFee, reservationDate, selectedReservationDate, bookingStatus, checkInTime, checkOutTime) 
