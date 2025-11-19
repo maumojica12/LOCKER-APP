@@ -1,6 +1,5 @@
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +45,6 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import java.time.LocalDate;
 import java.util.List;
-import javafx.scene.control.ComboBox;
 import java.util.List;
 
 public class AppFX extends Application {
@@ -2361,6 +2359,14 @@ private static void reservation(Stage stage) {
         return;
     }
 
+    LocalDateTime maxAllowedDate = LocalDateTime.now().plusDays(3);
+    if (selectedDate.isAfter(maxAllowedDate)) {
+        errorLabel.setText("Reservation cannot exceed 3 days from now");
+        lockerTitle.setVisible(false);
+        lockerScroll.setVisible(false);
+        return;
+    }
+
     // Save selected date for use in the checkBtn later
     selectedReservationDT[0] = selectedDate;
 
@@ -2448,11 +2454,9 @@ private static void reservation(Stage stage) {
                         Label idLabel = new Label("Locker ID: " + locker.getLockerID());
                         Label typeLabel = new Label("Locker Size: " + lockerSize);
                         Label location = new Label("Location ID: " + locker.getLocationID());
-
                         idLabel.setTextFill(Color.BLACK);
                         typeLabel.setTextFill(Color.BLACK);
                         location.setTextFill(Color.BLACK);
-
                         info.getChildren().addAll(idLabel, typeLabel, location);
 
                         Button checkBtn = new Button("✓");
@@ -2606,24 +2610,44 @@ private static void checkIn(Stage stage) {
             bookingRefText.setFont(Font.font("Arial", FontWeight.BOLD, 14));
             bookingRefText.setFill(Color.BLACK);
 
+            // --- Add Validity Message ---
+            LocalDateTime selectedDT = booking.getSelectedReservationDateTime();
+            LocalDateTime now = LocalDateTime.now();
+
+            String checkInMessage;
+            Color checkInColor;
+
+            if (selectedDT != null && now.isAfter(selectedDT.minusHours(1))) {
+                checkInMessage = "User valid for check-in";
+                checkInColor = Color.GREEN;
+            } else {
+                checkInMessage = "Too early for check-in";
+                checkInColor = Color.RED;
+            }
+
+            Text checkInText = new Text(checkInMessage);
+            checkInText.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+            checkInText.setFill(checkInColor);
+
             Text statusText = new Text(
                     "Booking Status: " + booking.getBookingStatus() + "\n" +
                     "Reservation on: " + booking.getReservationDate() + "\n" +
                     "Selected Reservation Date: " + booking.getSelectedReservationDate() + "\n" +
                     "User ID: " + user.getUserID() + "\n" +
                     "User Name: " + user.getFirstName() + " " + user.getLastName() + "\n" +
-                    "Locker ID: " + locker.getLockerID() + " [" + lockerSize + "]"
+                    "Locker ID: " + locker.getLockerID() + " [" + lockerSize + "]\n"
             );
             statusText.setFont(Font.font("Arial", 14));
             statusText.setFill(Color.BLACK);
 
-            TextFlow infoFlow = new TextFlow(bookingRefText, statusText);
+            TextFlow infoFlow = new TextFlow(bookingRefText, statusText,checkInText);
 
             // --- Check-In button ---
             Button checkInBtn = new Button("✔ Check-In");
             checkInBtn.setFont(Font.font("Arial", FontWeight.BOLD, 16));
             checkInBtn.setStyle("-fx-background-color: #28a745; -fx-text-fill: white; -fx-background-radius: 8;");
             checkInBtn.setCursor(Cursor.HAND);
+            checkInBtn.setDisable(checkInMessage.equals("Too early for check-in"));
 
             checkInBtn.setOnAction(e -> {
                 boolean success = bookingService.checkIn(booking.getBookingReference());
