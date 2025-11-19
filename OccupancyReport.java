@@ -4,6 +4,7 @@ public class OccupancyReport {
     private String lockerLocation;
     private int totalBookings;
 
+    // --- Constructor ---
     public OccupancyReport(int lockerID, String lockerSize, String lockerLocation, int totalBookings) {
         this.lockerID = lockerID;
         this.lockerSize = lockerSize;
@@ -11,6 +12,7 @@ public class OccupancyReport {
         this.totalBookings = totalBookings;
     }
 
+    // --- Getters ---
     public int getLockerID() { 
         return lockerID; 
     }

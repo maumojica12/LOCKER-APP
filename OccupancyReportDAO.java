@@ -4,14 +4,17 @@ import java.util.List;
 
 public class OccupancyReportDAO {
 
+    // --- Database connection ---
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/luggage_locker_db";
     private static final String USER = "root";
     private static final String PASS = "Auq_n49s.xq#";
 
+    // --- Helper method to find connection ---
     private Connection getConnection() throws SQLException {
         return DriverManager.getConnection(URL, USER, PASS);
     }
 
+    // --- Get occupancy report grouped by locker size for a specific year ---
     public List<OccupancyReport> getOccupancyBySize(int year) {
         List<OccupancyReport> list = new ArrayList<>();
 
@@ -46,6 +49,7 @@ public class OccupancyReportDAO {
         return list;
     }
 
+    // --- Get occupancy report grouped by locker location for a specific year ---
     public List<OccupancyReport> getOccupancyByLocation(int year) {
         List<OccupancyReport> list = new ArrayList<>();
 

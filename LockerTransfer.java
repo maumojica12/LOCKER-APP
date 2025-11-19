@@ -8,6 +8,7 @@ public class LockerTransfer {
     private int oldLockerID;
     private int newLockerID;
 
+    // --- Constructor with transferID (for existing transfers) ---
     public LockerTransfer(int transferID, String bookingReference, LocalDateTime transferDate,
                           double adjustmentAmount, int oldLockerID, int newLockerID) {
         this.transferID = transferID;
@@ -18,6 +19,7 @@ public class LockerTransfer {
         this.newLockerID = newLockerID;
     }
 
+    // --- Constructor without transferID (for new transfers) ---
     public LockerTransfer(String bookingReference, LocalDateTime transferDate,
                           double adjustmentAmount, int oldLockerID, int newLockerID) {
         this.bookingReference = bookingReference;
@@ -27,6 +29,7 @@ public class LockerTransfer {
         this.newLockerID = newLockerID;
     }
 
+    // --- Getters and Setters ---
     public int getTransferID(){ 
         return transferID; 
     }

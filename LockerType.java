@@ -4,6 +4,7 @@ public class LockerType{
     private double lockerMaxWeight;
     private double lockerRate;
 
+    // --- Constructor ---
     public LockerType(int lockerTypeID, String lockerTypeSize, double lockerMaxWeight, double lockerRate){
         this.lockerTypeID = lockerTypeID;
         this.lockerTypeSize = lockerTypeSize;
@@ -11,6 +12,7 @@ public class LockerType{
         this.lockerRate = lockerRate;
     }
 
+    // --- Getters ---
     public int getLockerTypeID(){ 
         return lockerTypeID; 
     }
@@ -27,6 +29,7 @@ public class LockerType{
         return lockerRate; 
     }
 
+    // --- toString override ---
     public String toString() {
         return "LockerTypeID: " + lockerTypeID + ", Size: " + lockerTypeSize + 
                ", MaxWeight: " + lockerMaxWeight + ", Rate: ₱" + lockerRate;

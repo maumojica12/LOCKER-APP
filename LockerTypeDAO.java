@@ -4,10 +4,12 @@ import java.util.List;
 
 public class LockerTypeDAO {
 
+    // --- Database connection ---
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/luggage_locker_db";
     private static final String USER = "root"; // MySQL username
     private static final String PASSWORD = "Auq_n49s.xq#"; // MySQL password
 
+    // --- Get all locker types ---
     public List<LockerType> getAllLockerTypes() {
         List<LockerType> types = new ArrayList<>();
         String query = "SELECT * FROM LockerType";
@@ -33,6 +35,7 @@ public class LockerTypeDAO {
         return types;
     }
 
+    // --- Get a locker type by its ID ---
     public LockerType getLockerTypeByID(int id) {
         String query = "SELECT * FROM LockerType WHERE lockerTypeID = ?";
         LockerType type = null;
@@ -59,6 +62,7 @@ public class LockerTypeDAO {
         return type;
     }
 
+    // --- Search locker types by ID or size ---
     public List<LockerType> searchLockerTypes(String idText, String sizeText) {
         List<LockerType> results = new ArrayList<>();
 
