@@ -230,8 +230,10 @@ INSERT INTO Payment (paymentID, bookingReference, userID, paymentAmount, payment
 
 -- Cancellation
 INSERT INTO Cancellation (bookingReference, cancelDate, reason, refundFee) VALUES
-('BKG-0003', NOW(), 'User cancelled before check-in', 100.00),
-('BKG-0007', NOW(), 'User cancelled', 0);
+('BKG-0003', '2025-05-19 09:00:00', 'User cancelled before check-in', 100.00),
+('BKG-0007', '2025-05-18 06:30:00', 'User cancelled', 0),
+('BKG-0013', '2025-05-14 09:15:00', 'Unexpected schedule conflict', 50.00),
+('BKG-0018', '2025-04-30 10:30:00', 'User cancelled due to personal reasons', 120.00);
 
 SELECT * FROM User;
 SELECT * FROM LockerType;
