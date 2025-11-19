@@ -94,6 +94,7 @@ public class LockerTransferDAO {
         return transfer;
     }
 
+    // --- Get all transfers for a booking ---
     public static List<LockerTransfer> getAllTransfersForBooking(String bookingReference) {
         List<LockerTransfer> transfers = new ArrayList<>();
         String query = "SELECT * FROM LockerTransfer WHERE bookingReference = ? ORDER BY transferDate ASC";
@@ -123,7 +124,6 @@ public class LockerTransferDAO {
         return transfers;
     }
 
-
     // --- Add new transfer and update booking ---
     public static int addTransfer(LockerTransfer transfer) {
         int generatedId = -1;
@@ -142,7 +142,6 @@ public class LockerTransferDAO {
                         case "Small":  adjustmentAmount = 40; break;
                         case "Medium": adjustmentAmount = 60; break;
                         case "Large":  adjustmentAmount = 80; break;
-                        default: adjustmentAmount = 0;
                     }
                 }
                 transfer.setAdjustmentAmount(adjustmentAmount);
@@ -177,10 +176,8 @@ public class LockerTransferDAO {
             }
 
             // --- Update locker statuses ---
-            LockerDAO lockerDAO2 = new LockerDAO();
-            lockerDAO2.updateLockerStatus(transfer.getOldLockerID(), "Available");
-            lockerDAO2.updateLockerStatus(transfer.getNewLockerID(), "Occupied");
-
+            lockerDAO.updateLockerStatus(transfer.getOldLockerID(), "Available");
+            lockerDAO.updateLockerStatus(transfer.getNewLockerID(), "Occupied");
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -189,13 +186,13 @@ public class LockerTransferDAO {
         return generatedId;
     }
 
-    // --- Update transfer and recalc adjustment fee ---
+    // --- Update transfer ---
     public static boolean updateTransfer(LockerTransfer transfer) {
         boolean success = false;
 
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD)) {
 
-            // --- Recalculate adjustment fee based on new locker ---
+            // --- Recalculate adjustment fee ---
             LockerDAO lockerDAO = new LockerDAO();
             Locker newLocker = lockerDAO.getLockerByID(transfer.getNewLockerID());
             if (newLocker != null) {
@@ -206,13 +203,11 @@ public class LockerTransferDAO {
                         case "Small":  adjustmentAmount = 40; break;
                         case "Medium": adjustmentAmount = 60; break;
                         case "Large":  adjustmentAmount = 80; break;
-                        default: adjustmentAmount = 0;
                     }
                 }
                 transfer.setAdjustmentAmount(adjustmentAmount);
             }
 
-            // --- Update LockerTransfer record ---
             String query = "UPDATE LockerTransfer SET bookingReference = ?, transferDate = ?, adjustmentAmount = ?, oldLockerID = ?, newLockerID = ? WHERE transferID = ?";
             try (PreparedStatement ps = conn.prepareStatement(query)) {
                 ps.setString(1, transfer.getBookingReference());
@@ -225,7 +220,7 @@ public class LockerTransferDAO {
                 success = ps.executeUpdate() > 0;
             }
 
-            // --- Update Booking lockerID if transfer updated ---
+            // --- Update Booking lockerID ---
             if (success) {
                 String updateBookingSQL = "UPDATE Booking SET lockerID = ? WHERE bookingReference = ?";
                 try (PreparedStatement ps2 = conn.prepareStatement(updateBookingSQL)) {
@@ -259,14 +254,14 @@ public class LockerTransferDAO {
         return success;
     }
 
-    public static boolean isLockerAlreadyTransferred(int lockerID) {
-        String query = "SELECT COUNT(*) FROM LockerTransfer WHERE newLockerID = ?";
+    public static boolean isLockerCurrentlyAssigned(int lockerID) {
+        String query = "SELECT COUNT(*) FROM Booking WHERE lockerID = ? AND bookingStatus = 'Checked-In'";
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
              PreparedStatement ps = conn.prepareStatement(query)) {
             ps.setInt(1, lockerID);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return rs.getInt(1) > 0;
+                    return rs.getInt(1) > 0;  
                 }
             }
         } catch (SQLException e) {

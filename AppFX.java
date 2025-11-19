@@ -3957,9 +3957,9 @@ private static void viewAllCancellations(Stage stage) {
         newLockerLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
         newLockerLabel.setTextFill(Color.BLACK);
 
-        // --- Auto-fill Old Locker from Booking Reference ---
-        BookingDAO bookingDAOAuto = new BookingDAO();
-        LockerDAO lockerDAOAuto = new LockerDAO();
+        BookingDAO bookingDAO = new BookingDAO();
+        LockerDAO lockerDAO = new LockerDAO();
+        LockerTypeDAO lockerTypeDAO = new LockerTypeDAO();
 
         // --- ComboBox for available lockers ---
         ComboBox<Locker> lockerCombo = new ComboBox<>();
@@ -3968,37 +3968,33 @@ private static void viewAllCancellations(Stage stage) {
         lockerCombo.setStyle("-fx-pref-height: 50px; -fx-font-size: 20px;");
 
         bookingField.textProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal == null || newVal.isEmpty()) {
-                oldLockerField.setText("");
-                oldLockerField.setEditable(true);
-                lockerCombo.getItems().clear();
-                return;
-            }
+            lockerCombo.getItems().clear();
+            oldLockerField.setText("");
+            oldLockerField.setEditable(true);
 
-            Booking booking = bookingDAOAuto.getBookingByReference(newVal);
+            if (newVal == null || newVal.isEmpty()) return;
 
-            if (booking != null && booking.getBookingStatus().equalsIgnoreCase("Checked-in")) {
-                int currentLocker = booking.getLockerID();
-                oldLockerField.setText(String.valueOf(currentLocker));
-                oldLockerField.setEditable(false);
+            Booking booking = bookingDAO.getBookingByReference(newVal);
+            if (booking == null || !booking.getBookingStatus().equalsIgnoreCase("Checked-In")) return;
 
-                // Refresh available lockers EXCEPT the current locker
-                List<Locker> available = lockerDAOAuto.getAvailableLocker();
-                available.removeIf(l -> l.getLockerID() == currentLocker);
+            int currentLockerID = booking.getLockerID();
+            oldLockerField.setText(String.valueOf(currentLockerID));
+            oldLockerField.setEditable(false);
 
-                lockerCombo.getItems().clear();
-                lockerCombo.getItems().addAll(available);
-            } else {
-                oldLockerField.setText("");
-                oldLockerField.setEditable(true);
-                lockerCombo.getItems().clear();
-            }
+            Locker oldLocker = lockerDAO.getLockerByID(currentLockerID);
+            if (oldLocker == null) return;
+
+            // --- Filter available lockers ---
+            List<Locker> available = lockerDAO.getAvailableLocker();
+            available.removeIf(l -> 
+                l.getLockerID() == currentLockerID || // exclude current locker
+                l.getLockerTypeID() == oldLocker.getLockerTypeID() || // exclude same type
+                l.getLocationID() != oldLocker.getLocationID() || // exclude different location
+                LockerTransferDAO.isLockerCurrentlyAssigned(l.getLockerID()) // exclude occupied lockers
+            );
+
+            lockerCombo.getItems().addAll(available);
         });
-
-        LockerDAO lockerDAO = new LockerDAO();
-        LockerTypeDAO lockerTypeDAO = new LockerTypeDAO();
-        List<Locker> availableLockers = lockerDAO.getAvailableLocker();
-        lockerCombo.getItems().addAll(availableLockers);
 
         lockerCombo.setCellFactory(param -> new ListCell<>() {
             @Override
@@ -4025,12 +4021,10 @@ private static void viewAllCancellations(Stage stage) {
         amountField.setStyle("-fx-pref-height: 50px; -fx-font-size: 20px;");
         amountField.setEditable(false);
 
-        // Auto-update fee
         lockerCombo.valueProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
                 LockerType lt = lockerTypeDAO.getLockerTypeByID(newVal.getLockerTypeID());
                 double fee = 0;
-
                 if (lt != null) {
                     switch (lt.getLockerTypeSize()) {
                         case "Small":  fee = 40; break;
@@ -4058,7 +4052,7 @@ private static void viewAllCancellations(Stage stage) {
         backBtn.setPrefHeight(40);
         backBtn.setOnAction(e -> handleTransfers(stage));
 
-        // --- Form Layout ---
+        // --- Layout ---
         VBox fieldsBox = new VBox(15,
                 bookingLabel, bookingField,
                 oldLockerLabel, oldLockerField, newLockerLabel, lockerCombo,
@@ -4092,31 +4086,32 @@ private static void viewAllCancellations(Stage stage) {
                 int oldLockerID = Integer.parseInt(oldLockerField.getText().trim());
                 Locker selectedLocker = lockerCombo.getValue();
 
-                Booking booking = bookingDAOAuto.getBookingByReference(bookingRef);
-                if (booking == null || !booking.getBookingStatus().equalsIgnoreCase("Checked-in")) {
-                    new Alert(Alert.AlertType.ERROR, "Cannot transfer: booking is not active.").showAndWait();
+                if (selectedLocker == null) {
+                    new Alert(Alert.AlertType.ERROR, "Please select a new locker.").showAndWait();
                     return;
                 }
 
                 int newLockerID = selectedLocker.getLockerID();
+                Locker oldLocker = lockerDAO.getLockerByID(oldLockerID);
 
-                // --- #2 Prevent overlapping locker IDs ---
+                // --- Validations ---
                 if (oldLockerID == newLockerID) {
-                    Alert alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setTitle("Invalid Transfer");
-                    alert.setHeaderText(null);
-                    alert.setContentText("Old Locker ID and New Locker ID cannot be the same.");
-                    alert.showAndWait();
+                    new Alert(Alert.AlertType.ERROR, "Old Locker ID and New Locker ID cannot be the same.").showAndWait();
                     return;
                 }
 
-                // --- #5 Prevent overlapping newLockerIDs ---
-                if (LockerTransferDAO.isLockerAlreadyTransferred(newLockerID)) {
-                    Alert alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setTitle("Invalid Transfer");
-                    alert.setHeaderText(null);
-                    alert.setContentText("The selected locker is already assigned for another transfer. Please choose a different locker.");
-                    alert.showAndWait();
+                if (oldLocker.getLockerTypeID() == selectedLocker.getLockerTypeID()) {
+                    new Alert(Alert.AlertType.ERROR, "Cannot transfer to a locker of the same type.").showAndWait();
+                    return;
+                }
+
+                if (oldLocker.getLocationID() != selectedLocker.getLocationID()) {
+                    new Alert(Alert.AlertType.ERROR, "New locker must be in the same location as the old locker.").showAndWait();
+                    return;
+                }
+
+                if (LockerTransferDAO.isLockerCurrentlyAssigned(newLockerID)) {
+                    new Alert(Alert.AlertType.ERROR, "Selected locker is currently occupied.").showAndWait();
                     return;
                 }
 
@@ -4141,11 +4136,7 @@ private static void viewAllCancellations(Stage stage) {
                 handleTransfers(stage);
 
             } catch (NumberFormatException ex) {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setTitle("Input Error");
-                alert.setHeaderText(null);
-                alert.setContentText("Please enter valid numbers.");
-                alert.showAndWait();
+                new Alert(Alert.AlertType.ERROR, "Please enter valid numbers.").showAndWait();
             }
         });
     }
