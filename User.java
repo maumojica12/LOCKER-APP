@@ -1,12 +1,10 @@
 public class User {
-
     private int userID;
     private String firstName;
     private String lastName;
     private String userContact;
     private String userEmail;
 
-    // --- Constructors ---
     public User() {
         // default constructor
     }
@@ -28,7 +26,6 @@ public class User {
         this.userEmail = userEmail;
     }
 
-    // --- Getters and Setters ---
     public int getUserID() {
         return userID;
     }
