@@ -9,7 +9,7 @@ CREATE TABLE User(
 		firstName VARCHAR(50) NOT NULL,
 		lastName VARCHAR(50) NOT NULL,
 		userContact VARCHAR(20),
-		userEmail VARCHAR(100)	
+		userEmail VARCHAR(100)
 );
 
 -- 2. LOCKERTYPE TABLE
@@ -34,7 +34,6 @@ CREATE TABLE Locker(
 		lockerID INT AUTO_INCREMENT PRIMARY KEY,
 		lockerTypeID INT NOT NULL,
 		locationID INT NOT NULL,
-		locationPostalCode INT NOT NULL,
 		lockerStatus ENUM('Available','Reserved','Occupied') DEFAULT 'Available',
 		FOREIGN KEY (lockerTypeID) REFERENCES LockerType(lockerTypeID),
 		FOREIGN KEY (locationID) REFERENCES Location(locationID)
@@ -181,20 +180,20 @@ INSERT INTO Location (locationName, locationCity, locationPostalCode, contact) V
 ('DLSU Laguna', 'Biñan', '4024', '09170002222');
 
 -- Locker
-INSERT INTO Locker (lockerTypeID, locationID, locationPostalCode, lockerStatus) VALUES
-(1, 1, '1004', 'Available'),
-(1, 1, '1004', 'Available'),
-(1, 2, '4024', 'Available'),
-(2, 1, '1004', 'Available'),
-(2, 1, '1004', 'Occupied'),
-(2, 2, '4024', 'Available'),
-(3, 2, '4024', 'Available'),
-(3, 1, '1004', 'Available'),
-(3, 1, '1004', 'Available'),
-(3, 2, '4024', 'Available');
+INSERT INTO Locker (lockerTypeID, locationID, lockerStatus) VALUES
+(1, 1,'Available'),
+(1, 1, 'Available'),
+(1, 2, 'Available'),
+(2, 1, 'Available'),
+(2, 1, 'Occupied'),
+(2, 2, 'Available'),
+(3, 2, 'Available'),
+(3, 1, 'Available'),
+(3, 1, 'Available'),
+(3, 2, 'Available');
 
-INSERT INTO Booking 
-(bookingReference, userID, lockerID, reservationFee, reservationDate, selectedReservationDate, bookingStatus, checkInTime, checkOutTime) 
+INSERT INTO Booking
+(bookingReference, userID, lockerID, reservationFee, reservationDate, selectedReservationDate, bookingStatus, checkInTime, checkOutTime)
 VALUES
 ('BKG-0001', 1, 1, 80.00,  '2025-05-19 11:10:26', '2025-05-19 16:15:26', 'Checked-Out', '2025-05-19 14:15:26', '2025-05-19 15:17:26'),
 ('BKG-0002', 2, 2, 120.00, '2025-05-19 08:00:00', '2025-05-19 13:30:00', 'Pending Check-in', NULL, NULL),
@@ -233,10 +232,6 @@ INSERT INTO Payment (paymentID, bookingReference, userID, paymentAmount, payment
 INSERT INTO Cancellation (bookingReference, cancelDate, reason, refundFee) VALUES
 ('BKG-0003', NOW(), 'User cancelled before check-in', 100.00),
 ('BKG-0007', NOW(), 'User cancelled', 0);
-
--- Locker Transfer
-INSERT INTO LockerTransfer (bookingReference, transferDate, adjustmentAmount, oldLockerID, newLockerID) VALUES
-('BKG-0005', '2025-11-18 19:10:00' , 80.00, 5, 7);
 
 SELECT * FROM User;
 SELECT * FROM LockerType;

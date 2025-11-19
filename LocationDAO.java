@@ -6,7 +6,7 @@ public class LocationDAO {
 
     private static final String URL = "jdbc:mysql://localhost:3306/luggage_locker_db";
     private static final String USER = "root";
-    private static final String PASSWORD = "22757205";
+    private static final String PASSWORD = "Auq_n49s.xq#";
 
     public List<Location> getAllLocations() {
         List<Location> locations = new ArrayList<>();

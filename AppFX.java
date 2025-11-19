@@ -1305,13 +1305,13 @@ private static void handleManageLocations(Stage stage) {
                         VBox info = new VBox(5);
                         Label idLabel = new Label("Locker ID: " + locker.getLockerID());
                         Label typeLabel = new Label("Size: " + size);
-                        Label postal = new Label("Postal Code: " + locker.getLocationPostalCode());
+
 
                         idLabel.setTextFill(Color.BLACK);
                         typeLabel.setTextFill(Color.BLACK);
-                        postal.setTextFill(Color.BLACK);
 
-                        info.getChildren().addAll(idLabel, typeLabel, postal);
+
+                        info.getChildren().addAll(idLabel, typeLabel);
 
                         Region spacer = new Region();
                         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -1482,7 +1482,7 @@ private static void handleManageLocations(Stage stage) {
 
                         Label idLabel = new Label("Locker ID: " + locker.getLockerID());
                         Label sizeLabel = new Label("Size: " + size);
-                        Label postal = new Label("Postal Code: " + locker.getLocationPostalCode());
+
                         Label statusLabel = new Label("Status: " + locker.getLockerStatus());
 
                         statusLabel.setTextFill(
@@ -1496,10 +1496,10 @@ private static void handleManageLocations(Stage stage) {
 
                         idLabel.setTextFill(Color.BLACK);
                         sizeLabel.setTextFill(Color.BLACK);
-                        postal.setTextFill(Color.BLACK);
+
                         statusLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
 
-                        card.getChildren().addAll(idLabel, sizeLabel, postal, statusLabel);
+                        card.getChildren().addAll(idLabel, sizeLabel, statusLabel);
                         lockerList.getChildren().add(card);
                     }
 
@@ -1815,7 +1815,7 @@ private static void handleManageLocations(Stage stage) {
         container.setAlignment(Pos.TOP_CENTER);
 
         Label title = new Label("Locker Records Management");
-        title.setFont(Font.font("Arial", FontWeight.BOLD, 26));
+        title.setFont(Font.font("Arial", FontWeight.BOLD, 28));
         title.setTextFill(Color.WHITE);
 
         ScrollPane scroll = new ScrollPane();
@@ -1823,7 +1823,7 @@ private static void handleManageLocations(Stage stage) {
         scroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
         scroll.setPrefViewportHeight(420);
 
-        VBox list = new VBox(12);
+        VBox list = new VBox(15);
         list.setPadding(new Insets(10));
         list.setAlignment(Pos.TOP_CENTER);
 
@@ -1852,7 +1852,6 @@ private static void handleManageLocations(Stage stage) {
                         "ID: " + l.getLockerID() +
                                 " | Type: " + l.getLockerTypeID() +
                                 " | Location: " + l.getLocationID() +
-                                " | Postal: " + l.getLocationPostalCode() +
                                 " | Status: " + l.getLockerStatus()
                 );
                 info.setFont(Font.font("Arial", 14));
@@ -1870,9 +1869,10 @@ private static void handleManageLocations(Stage stage) {
                 delBtn.setOnAction(e -> {
                     Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
                             "Delete Locker ID: " + l.getLockerID() + "?");
+
                     if (confirm.showAndWait().get() == ButtonType.OK) {
                         if (dao.deleteLocker(l.getLockerID())) {
-                            handleManageLockers(stage);  // refresh
+                            handleManageLockers(stage); // refresh
                         }
                     }
                 });
@@ -1900,11 +1900,10 @@ private static void handleManageLocations(Stage stage) {
         stage.show();
     }
 
+
     private static void addLocker(Stage stage) {
 
-        // --- Background Image ---
-        Image bgImage = new Image(AppFX.class.getResourceAsStream("lockerMenu.jpg"));
-        ImageView bgView = new ImageView(bgImage);
+        ImageView bgView = new ImageView(new Image(AppFX.class.getResourceAsStream("lockerMenu.jpg")));
         bgView.setPreserveRatio(false);
 
         StackPane root = new StackPane();
@@ -1927,7 +1926,6 @@ private static void handleManageLocations(Stage stage) {
 
         Label title = new Label("Add New Locker");
         title.setFont(Font.font("Arial", FontWeight.BOLD, 28));
-        title.setTextFill(Color.BLACK);
 
         String fieldStyle = """
         -fx-font-size: 16px;
@@ -1947,11 +1945,6 @@ private static void handleManageLocations(Stage stage) {
         locationField.setPrefHeight(45);
         locationField.setStyle(fieldStyle);
 
-        TextField postalField = new TextField();
-        postalField.setPromptText("Postal Code");
-        postalField.setPrefHeight(45);
-        postalField.setStyle(fieldStyle);
-
         Label errorLabel = new Label();
         errorLabel.setTextFill(Color.RED);
         errorLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
@@ -1963,66 +1956,35 @@ private static void handleManageLocations(Stage stage) {
 
         saveButton.setOnAction(e -> {
 
-            errorLabel.setText(""); // Clear errors
+            errorLabel.setText("");
 
             String typeText = typeField.getText().trim();
             String locText = locationField.getText().trim();
-            String postalText = postalField.getText().trim();
 
             boolean valid = true;
 
-            // ---- Validation for typeField ----
-            if (typeText.isEmpty()) {
-                errorLabel.setText("Locker Type ID cannot be empty.");
-                typeField.setStyle(fieldStyle + "; -fx-border-color:red; -fx-border-width:2;");
-                valid = false;
-            } else if (!typeText.matches("\\d+")) {
+            if (!typeText.matches("\\d+")) {
                 errorLabel.setText("Locker Type ID must be numeric.");
-                typeField.setStyle(fieldStyle + "; -fx-border-color:red; -fx-border-width:2;");
                 valid = false;
-            } else {
-                typeField.setStyle(fieldStyle);
             }
-
-            // ---- Validation for locationField ----
-            if (locText.isEmpty()) {
-                errorLabel.setText("Location ID cannot be empty.");
-                locationField.setStyle(fieldStyle + "; -fx-border-color:red; -fx-border-width:2;");
-                valid = false;
-            } else if (!locText.matches("\\d+")) {
+            if (!locText.matches("\\d+")) {
                 errorLabel.setText("Location ID must be numeric.");
-                locationField.setStyle(fieldStyle + "; -fx-border-color:red; -fx-border-width:2;");
                 valid = false;
-            } else {
-                locationField.setStyle(fieldStyle);
-            }
-
-            // ---- Validation for postalField ----
-            if (postalText.isEmpty()) {
-                errorLabel.setText("Postal Code cannot be empty.");
-                postalField.setStyle(fieldStyle + "; -fx-border-color:red; -fx-border-width:2;");
-                valid = false;
-            } else if (!postalText.matches("\\d+")) {
-                errorLabel.setText("Postal Code must be numeric.");
-                postalField.setStyle(fieldStyle + "; -fx-border-color:red; -fx-border-width:2;");
-                valid = false;
-            } else {
-                postalField.setStyle(fieldStyle);
             }
 
             if (!valid) return;
 
-            int lockerTypeID = Integer.parseInt(typeText);
-            int locationID = Integer.parseInt(locText);
-            int postalCode = Integer.parseInt(postalText);
+            Locker newLocker = new Locker(
+                    Integer.parseInt(typeText),
+                    Integer.parseInt(locText)
+            );
 
-            Locker newLocker = new Locker(lockerTypeID, locationID, postalCode);
+            LockerDAO dao = new LockerDAO();
 
-            LockerDAO lockerDAO = new LockerDAO();
-            if (lockerDAO.addLocker(newLocker)) {
+            if (dao.addLocker(newLocker)) {
                 handleManageLockers(stage);
             } else {
-                errorLabel.setText("Failed to add locker. Please check your inputs.");
+                errorLabel.setText("Failed to add locker.");
             }
         });
 
@@ -2032,7 +1994,7 @@ private static void handleManageLocations(Stage stage) {
         backButton.setStyle("-fx-background-color:#b30000; -fx-text-fill:white; -fx-background-radius:10;");
         backButton.setOnAction(e -> handleManageLockers(stage));
 
-        panel.getChildren().addAll(title, typeField, locationField, postalField,
+        panel.getChildren().addAll(title, typeField, locationField,
                 errorLabel, saveButton, backButton);
 
         root.getChildren().add(panel);
@@ -2043,13 +2005,13 @@ private static void handleManageLocations(Stage stage) {
         stage.show();
     }
 
+
     private static void editLocker(Stage stage, int lockerID) {
 
-        LockerDAO lockerDAO = new LockerDAO();
-        Locker locker = lockerDAO.getLockerByID(lockerID);
+        LockerDAO dao = new LockerDAO();
+        Locker locker = dao.getLockerByID(lockerID);
 
-        Image bgImage = new Image(AppFX.class.getResourceAsStream("lockerMenu.jpg"));
-        ImageView bgView = new ImageView(bgImage);
+        ImageView bgView = new ImageView(new Image(AppFX.class.getResourceAsStream("lockerMenu.jpg")));
         bgView.setPreserveRatio(false);
 
         StackPane root = new StackPane();
@@ -2091,17 +2053,11 @@ private static void handleManageLocations(Stage stage) {
         locationField.setPrefSize(500, 50);
         locationField.setStyle(tfStyle);
 
-        TextField postalField = new TextField(String.valueOf(locker.getLocationPostalCode()));
-        postalField.setPromptText("Postal Code");
-        postalField.setPrefSize(500, 50);
-        postalField.setStyle(tfStyle);
-
         ComboBox<String> statusCombo = new ComboBox<>();
         statusCombo.getItems().addAll("Available", "Occupied", "Reserved");
         statusCombo.setValue(locker.getLockerStatus());
         statusCombo.setPrefHeight(50);
         statusCombo.setPrefWidth(500);
-        statusCombo.setStyle("-fx-font-size: 16px; -fx-background-radius: 8;");
 
         Label errorLabel = new Label();
         errorLabel.setTextFill(Color.RED);
@@ -2118,60 +2074,28 @@ private static void handleManageLocations(Stage stage) {
 
             String typeText = typeField.getText().trim();
             String locText = locationField.getText().trim();
-            String postalText = postalField.getText().trim();
 
             boolean valid = true;
 
-            // Validate type
-            if (typeText.isEmpty()) {
-                errorLabel.setText("Locker Type ID cannot be empty.");
-                typeField.setStyle(tfStyle + "; -fx-border-color:red; -fx-border-width:2;");
-                valid = false;
-            } else if (!typeText.matches("\\d+")) {
+            if (!typeText.matches("\\d+")) {
                 errorLabel.setText("Locker Type ID must be numeric.");
-                typeField.setStyle(tfStyle + "; -fx-border-color:red; -fx-border-width:2;");
                 valid = false;
-            } else {
-                typeField.setStyle(tfStyle);
             }
-
-            // Validate location
-            if (locText.isEmpty()) {
-                errorLabel.setText("Location ID cannot be empty.");
-                locationField.setStyle(tfStyle + "; -fx-border-color:red; -fx-border-width:2;");
-                valid = false;
-            } else if (!locText.matches("\\d+")) {
+            if (!locText.matches("\\d+")) {
                 errorLabel.setText("Location ID must be numeric.");
-                locationField.setStyle(tfStyle + "; -fx-border-color:red; -fx-border-width:2;");
                 valid = false;
-            } else {
-                locationField.setStyle(tfStyle);
-            }
-
-            // Validate postal
-            if (postalText.isEmpty()) {
-                errorLabel.setText("Postal Code cannot be empty.");
-                postalField.setStyle(tfStyle + "; -fx-border-color:red; -fx-border-width:2;");
-                valid = false;
-            } else if (!postalText.matches("\\d+")) {
-                errorLabel.setText("Postal Code must be numeric.");
-                postalField.setStyle(tfStyle + "; -fx-border-color:red; -fx-border-width:2;");
-                valid = false;
-            } else {
-                postalField.setStyle(tfStyle);
             }
 
             if (!valid) return;
 
             locker.setLockerTypeID(Integer.parseInt(typeText));
             locker.setLocationID(Integer.parseInt(locText));
-            locker.setLocationPostalCode(Integer.parseInt(postalText));
             locker.setLockerStatus(statusCombo.getValue());
 
-            if (lockerDAO.updateLocker(locker)) {
+            if (dao.updateLocker(locker)) {
                 handleManageLockers(stage);
             } else {
-                errorLabel.setText("Failed to update locker. Please try again.");
+                errorLabel.setText("Failed to update locker.");
             }
         });
 
@@ -2181,7 +2105,7 @@ private static void handleManageLocations(Stage stage) {
         backButton.setStyle("-fx-background-color:#b30000; -fx-text-fill:white; -fx-background-radius:10;");
         backButton.setOnAction(e -> handleManageLockers(stage));
 
-        card.getChildren().addAll(title, typeField, locationField, postalField, statusCombo, errorLabel,
+        card.getChildren().addAll(title, typeField, locationField, statusCombo, errorLabel,
                 updateButton, backButton);
 
         root.getChildren().add(card);
@@ -2192,7 +2116,8 @@ private static void handleManageLocations(Stage stage) {
         stage.show();
     }
 
-private static void handleBooking(Stage stage) {
+
+    private static void handleBooking(Stage stage) {
     stage.setTitle("Luggage Locker Booking System - Reservation/Booking Management");
 
     // --- Background ---
@@ -2525,12 +2450,12 @@ private static void reservation(Stage stage) {
                         Label idLabel = new Label("Locker ID: " + locker.getLockerID());
                         Label typeLabel = new Label("Locker Size: " + lockerSize);
                         Label location = new Label("Location ID: " + locker.getLocationID());
-                        Label postal = new Label("Postal Code: " + locker.getLocationPostalCode());
+
                         idLabel.setTextFill(Color.BLACK);
                         typeLabel.setTextFill(Color.BLACK);
                         location.setTextFill(Color.BLACK);
-                        postal.setTextFill(Color.BLACK);
-                        info.getChildren().addAll(idLabel, typeLabel, location, postal);
+
+                        info.getChildren().addAll(idLabel, typeLabel, location);
 
                         Button checkBtn = new Button("✓");
                         checkBtn.setFont(Font.font("Arial", FontWeight.BOLD, 16));
